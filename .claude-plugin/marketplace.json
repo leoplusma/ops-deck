@@ -1,0 +1,11 @@
+{
+  "name": "ops-deck",
+  "owner": { "name": "Minas N. Miliaras", "url": "https://github.com/leoplusma" },
+  "plugins": [
+    {
+      "name": "ops-deck",
+      "source": "./",
+      "description": "A sci-fi heads-up display for the Claude desktop app: animated backgrounds, a status band and a session dashboard."
+    }
+  ]
+}

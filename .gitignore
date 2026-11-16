@@ -1,0 +1,16 @@
+# Local working files that stay on the author's PC.
+CLAUDE.md
+build.ps1
+package.ps1
+package/
+dist/
+
+# Files the mod writes where it is installed, and editor types the engine writes.
+debug.txt
+reveal.txt
+.claude-plugin/types/
+
+# Operating system and editor leftovers.
+.DS_Store
+Thumbs.db
+*.log

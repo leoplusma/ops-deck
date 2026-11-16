@@ -1,0 +1,8 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70">
+<g transform="translate(4 3) scale(.58)" fill="none" stroke="#b8c2d0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 5C38 16 24 22 8 25V60C8 82 30 98 50 108C70 98 92 82 92 60V25C76 22 62 16 50 5Z"/>
+<path d="M22 50H40Q48 50 48 58V75"/>
+<circle cx="68" cy="51" r="5.5" fill="#22d3ee" stroke="none"/>
+</g>
+<text x="70" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="38" letter-spacing="1"><tspan fill="#b8c2d0">ops-</tspan><tspan fill="#22d3ee">deck</tspan></text>
+</svg>

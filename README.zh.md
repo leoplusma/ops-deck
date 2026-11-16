@@ -26,6 +26,8 @@
 
 较新版本的 Claude 桌面应用（已在 Windows 11 上用 Claude Code 2.1.325 测试）。动画背景需要在 Windows 中开启 **设置 › 辅助功能 › 视觉效果 › 动画效果**。
 
+**为深色模式设计。**在应用的浅色模式下暂时显示不佳；浅色模式支持可能很快推出。
+
 需要安装 **Git**（Claude 用它来下载插件）。Windows 上请安装 [Git for Windows](https://git-scm.com/download/win)，使用默认选项即可。
 
 **在虚拟机中**（VMware、Hyper-V、VirtualBox…）背景会变色但不会动，因为应用会对许多虚拟显卡驱动关闭硬件加速。请完全退出 Claude（包括时钟旁的托盘图标），然后用 `claude.exe --ignore-gpu-blocklist` 启动。

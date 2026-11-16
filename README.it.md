@@ -26,6 +26,8 @@
 
 Una versione recente dell’app desktop di Claude (provato con Claude Code 2.1.325 su Windows 11). Gli sfondi animati richiedono **Impostazioni › Accessibilità › Effetti visivi › Effetti di animazione** attivi in Windows.
 
+**Pensato per la modalità scura.** Nella modalità chiara dell’app non si vede ancora bene; il supporto per la modalità chiara potrebbe arrivare presto.
+
 Deve essere installato **Git** (Claude lo usa per scaricare il plugin). Su Windows: [Git for Windows](https://git-scm.com/download/win), con le opzioni predefinite.
 
 **In una macchina virtuale** (VMware, Hyper-V, VirtualBox…) gli sfondi cambiano colore ma restano fermi, perché l’app disattiva l’accelerazione grafica con molti driver virtuali. Chiudi Claude del tutto (anche dall’icona vicino all’orologio) e avvialo con `claude.exe --ignore-gpu-blocklist`.

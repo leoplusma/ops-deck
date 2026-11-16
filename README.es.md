@@ -26,6 +26,8 @@
 
 Una versión reciente de la app de escritorio de Claude (probado con Claude Code 2.1.325 en Windows 11). Los fondos animados necesitan **Configuración › Accesibilidad › Efectos visuales › Efectos de animación** activado en Windows.
 
+**Hecho para el modo oscuro.** En el modo claro de la app todavía no se ve bien; el soporte para modo claro puede llegar pronto.
+
 Debe estar instalado **Git** (Claude lo usa para descargar el plugin). En Windows: [Git for Windows](https://git-scm.com/download/win), con las opciones predeterminadas.
 
 **En una máquina virtual** (VMware, Hyper-V, VirtualBox…) los fondos cambian de color pero se quedan quietos, porque la app desactiva la aceleración gráfica con muchos controladores virtuales. Cierra Claude por completo (también el icono junto al reloj) y ábrelo con `claude.exe --ignore-gpu-blocklist`.

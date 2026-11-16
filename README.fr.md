@@ -26,6 +26,8 @@
 
 Une version récente de l’application Claude (testé avec Claude Code 2.1.325 sous Windows 11). Les fonds animés demandent **Paramètres › Accessibilité › Effets visuels › Effets d’animation** activés dans Windows.
 
+**Conçu pour le mode sombre.** En mode clair, l’affichage n’est pas encore correct ; la prise en charge du mode clair arrivera peut-être bientôt.
+
 **Git** doit être installé (Claude s’en sert pour télécharger le plugin). Sous Windows : [Git for Windows](https://git-scm.com/download/win), avec les options par défaut.
 
 **Dans une machine virtuelle** (VMware, Hyper-V, VirtualBox…), les fonds changent de couleur mais restent immobiles, car l’application désactive l’accélération graphique pour de nombreux pilotes virtuels. Quittez complètement Claude (y compris l’icône près de l’horloge) et relancez-le avec `claude.exe --ignore-gpu-blocklist`.

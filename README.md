@@ -35,6 +35,8 @@ Everything runs on your PC. ops-deck sends nothing anywhere; it only shows what 
 
 A recent Claude desktop app (tested with Claude Code 2.1.325 on Windows 11). Older versions without mod support won't load it. The moving backgrounds and graphs need the desktop app; in a terminal you get the band and a text dashboard. The Explorer, Copy and session-name features use PowerShell, so they need Windows.
 
+**Made for dark mode.** It doesn't look right in the app's light mode yet; light mode support may come soon.
+
 **Git** must be installed (Claude uses it to download the plugin). On Windows: [Git for Windows](https://git-scm.com/download/win), default options.
 
 ## Install

@@ -26,6 +26,8 @@
 
 Eine aktuelle Claude-Desktop-App (getestet mit Claude Code 2.1.325 unter Windows 11). Die bewegten Hintergründe brauchen in Windows **Einstellungen › Barrierefreiheit › Visuelle Effekte › Animationseffekte**.
 
+**Für den dunklen Modus gemacht.** Im hellen Modus der App sieht es noch nicht richtig aus; Unterstützung für den hellen Modus kommt vielleicht bald.
+
 **Git** muss installiert sein (Claude lädt das Plugin damit herunter). Unter Windows: [Git for Windows](https://git-scm.com/download/win), mit den Standardoptionen.
 
 **In einer virtuellen Maschine** (VMware, Hyper-V, VirtualBox…) wechseln die Hintergründe die Farbe, bleiben aber stehen, weil die App bei vielen virtuellen Grafiktreibern die Hardwarebeschleunigung abschaltet. Beenden Sie Claude vollständig (auch im Infobereich neben der Uhr) und starten Sie es mit `claude.exe --ignore-gpu-blocklist`.

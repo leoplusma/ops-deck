@@ -26,13 +26,11 @@
 
 ## المتطلبات
 
-إصدار حديث من تطبيق Claude للحاسوب (تمت التجربة مع Claude Code 2.1.325 على Windows 11). تحتاج الخلفيات المتحركة إلى تفعيل **الإعدادات › إمكانية الوصول › التأثيرات المرئية › تأثيرات الحركة** في Windows.
+إصدار حديث من تطبيق Claude للحاسوب (تمت التجربة مع Claude Code 2.1.325 على Windows 11).
 
 **مصمّم للوضع الداكن.** لا يظهر بشكل صحيح بعد في الوضع الفاتح للتطبيق؛ قد يأتي دعم الوضع الفاتح قريبًا.
 
 يجب أن يكون **Git** مثبتًا (يستخدمه Claude لتنزيل الإضافة). على Windows: [Git for Windows](https://git-scm.com/download/win)، بالخيارات الافتراضية.
-
-**في جهاز افتراضي** (VMware وHyper-V وVirtualBox…) تتغيّر ألوان الخلفيات لكنها تبقى ثابتة، لأن التطبيق يوقف تسريع الرسوميات مع كثير من برامج تشغيل الشاشة الافتراضية. أغلق Claude تمامًا (ومن الأيقونة بجانب الساعة أيضًا) ثم شغّله بالأمر `claude.exe --ignore-gpu-blocklist`.
 
 ## التثبيت
 
@@ -51,6 +49,24 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```
 
 افتح جلسة جديدة أو اكتب `/reload-plugins`. في البداية: الخلفية مفعّلة، والمشهد **horizon**، واللغة الإنجليزية (يمكن تغييرها من اللوحة وتُحفظ).
+
+## إذا لم تتحرك الخلفيات
+
+تتغيّر ألوان الخلفيات حسب عمل Claude، لكن يجب أيضًا أن تتحرك وتظهر وتختفي تدريجيًا. إذا بقيت ثابتة، فتحقّق بالترتيب:
+
+1. **حركات Windows مفعّلة:** **الإعدادات › إمكانية الوصول › التأثيرات المرئية › تأثيرات الحركة**. وفي **إعدادات النظام المتقدمة › الأداء** يجب تحديد «تحريك عناصر التحكم والعناصر داخل النوافذ».
+2. **في جهاز افتراضي** (VMware وHyper-V وVirtualBox…): فعّل الرسوميات ثلاثية الأبعاد (VMware: **VM › Settings › Display › Accelerate 3D graphics**) وثبّت أدوات الضيف (VMware Tools).
+3. **ما زالت ثابتة؟** كثيرًا ما لا يثق التطبيق ببرنامج تشغيل الشاشة في الجهاز الافتراضي فيرسم دون تسريع الرسوميات. أغلق Claude تمامًا (ومن الأيقونة بجانب الساعة أيضًا) ثم شغّله من PowerShell مع الخيار `--ignore-gpu-blocklist`:
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+أو أنشئ اختصارًا **Claude (VM)** على سطح المكتب يشغّله دائمًا بهذه الطريقة (يبقى صالحًا بعد التحديثات):
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## الإيقاف أو الإزالة
 

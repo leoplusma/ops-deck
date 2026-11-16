@@ -24,13 +24,11 @@
 
 ## Απαιτήσεις
 
-Πρόσφατη εφαρμογή Claude για υπολογιστή (δοκιμασμένο με Claude Code 2.1.325 σε Windows 11). Τα κινούμενα φόντα θέλουν τα Windows **Ρυθμίσεις › Προσβασιμότητα › Οπτικά εφέ › Εφέ κίνησης** ενεργά.
+Πρόσφατη εφαρμογή Claude για υπολογιστή (δοκιμασμένο με Claude Code 2.1.325 σε Windows 11).
 
 **Φτιαγμένο για σκούρο θέμα.** Στο ανοιχτό θέμα της εφαρμογής δεν δείχνει ακόμη σωστά· η υποστήριξη ανοιχτού θέματος ίσως έρθει σύντομα.
 
 Πρέπει να υπάρχει εγκατεστημένο το **Git** (το Claude το χρησιμοποιεί για να κατεβάσει το plugin). Σε Windows: [Git for Windows](https://git-scm.com/download/win), με τις προεπιλεγμένες ρυθμίσεις.
-
-**Σε εικονική μηχανή** (VMware, Hyper-V, VirtualBox…) τα φόντα αλλάζουν χρώμα αλλά μένουν ακίνητα, γιατί η εφαρμογή απενεργοποιεί την επιτάχυνση γραφικών για πολλούς εικονικούς οδηγούς οθόνης. Κλείστε εντελώς το Claude (και από το εικονίδιο δίπλα στο ρολόι) και ανοίξτε το με `claude.exe --ignore-gpu-blocklist`.
 
 ## Εγκατάσταση
 
@@ -49,6 +47,24 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```
 
 Ανοίξτε νέα συνεδρία ή γράψτε `/reload-plugins`. Αρχικά: φόντο ενεργό, σκηνή **horizon**, γλώσσα αγγλικά (αλλάζει στον πίνακα και τη θυμάται).
+
+## Αν τα φόντα δεν κινούνται
+
+Τα φόντα αλλάζουν χρώμα ανάλογα με τη δουλειά του Claude, αλλά πρέπει επίσης να κινούνται και να σβήνουν. Αν μένουν ακίνητα, ελέγξτε με τη σειρά:
+
+1. **Κινήσεις των Windows ενεργές:** **Ρυθμίσεις › Προσβασιμότητα › Οπτικά εφέ › Εφέ κίνησης**. Επίσης, στις **Ρυθμίσεις συστήματος για προχωρημένους › Επιδόσεις**, να είναι τσεκαρισμένο το «Κίνηση στοιχείων ελέγχου και στοιχείων μέσα σε παράθυρα».
+2. **Σε εικονική μηχανή** (VMware, Hyper-V, VirtualBox…): ενεργοποιήστε τα τρισδιάστατα γραφικά της (VMware: **VM › Settings › Display › Accelerate 3D graphics**) και εγκαταστήστε τα εργαλεία της (VMware Tools).
+3. **Ακόμη ακίνητα;** Η εφαρμογή συχνά δεν εμπιστεύεται τον οδηγό οθόνης μιας εικονικής μηχανής και σχεδιάζει χωρίς επιτάχυνση γραφικών. Κλείστε εντελώς το Claude (και από το εικονίδιο δίπλα στο ρολόι) και ανοίξτε το από το PowerShell με τον διακόπτη `--ignore-gpu-blocklist`:
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+Ή φτιάξτε μια συντόμευση **Claude (VM)** στην επιφάνεια εργασίας που το ανοίγει πάντα έτσι (ισχύει και μετά από ενημερώσεις):
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## Απενεργοποίηση ή αφαίρεση
 

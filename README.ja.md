@@ -24,13 +24,11 @@
 
 ## 必要なもの
 
-最新の Claude デスクトップアプリ（Windows 11 上の Claude Code 2.1.325 で確認済み）。動く背景には Windows の **設定 › アクセシビリティ › 視覚効果 › アニメーション効果** をオンにする必要があります。
+最新の Claude デスクトップアプリ（Windows 11 上の Claude Code 2.1.325 で確認済み）。
 
 **ダークモード向けです。**アプリのライトモードではまだ正しく表示されません。ライトモード対応は近いうちに追加されるかもしれません。
 
 **Git** がインストールされている必要があります（Claude がプラグインのダウンロードに使います）。Windows では [Git for Windows](https://git-scm.com/download/win) を既定の設定でインストールしてください。
-
-**仮想マシンでは**（VMware、Hyper-V、VirtualBox…）背景の色は変わりますが動きません。アプリが多くの仮想グラフィックドライバーでハードウェアアクセラレーションを無効にするためです。Claude を完全に終了し（時計の横のトレイアイコンも）、`claude.exe --ignore-gpu-blocklist` で起動してください。
 
 ## インストール
 
@@ -49,6 +47,24 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```
 
 新しいセッションを開くか、`/reload-plugins` と入力します。初期設定：背景オン、シーン **horizon**、言語は英語（ダッシュボードで変更でき、記憶されます）。
+
+## 背景が動かないとき
+
+背景は Claude の作業に合わせて色が変わり、さらに動いたりフェードしたりするはずです。止まったままなら、順に確認してください：
+
+1. **Windows のアニメーションがオン：** **設定 › アクセシビリティ › 視覚効果 › アニメーション効果**。また **システムの詳細設定 › パフォーマンス** で「ウィンドウ内のコントロールと要素をアニメーション化する」にチェック。
+2. **仮想マシンでは**（VMware、Hyper-V、VirtualBox…）：3D グラフィックスをオンにし（VMware：**VM › Settings › Display › Accelerate 3D graphics**）、ゲストツール（VMware Tools）をインストールします。
+3. **まだ動かない？** アプリは仮想マシンのグラフィックドライバーを信頼せず、ハードウェアアクセラレーションなしで描画することがよくあります。Claude を完全に終了し（時計の横のトレイアイコンも）、PowerShell から `--ignore-gpu-blocklist` スイッチ付きで起動してください：
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+または、いつもこの方法で起動するデスクトップのショートカット **Claude (VM)** を作成します（更新後も使えます）：
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## オフにする・削除する
 

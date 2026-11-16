@@ -24,13 +24,11 @@
 
 ## Voraussetzungen
 
-Eine aktuelle Claude-Desktop-App (getestet mit Claude Code 2.1.325 unter Windows 11). Die bewegten Hintergründe brauchen in Windows **Einstellungen › Barrierefreiheit › Visuelle Effekte › Animationseffekte**.
+Eine aktuelle Claude-Desktop-App (getestet mit Claude Code 2.1.325 unter Windows 11).
 
 **Für den dunklen Modus gemacht.** Im hellen Modus der App sieht es noch nicht richtig aus; Unterstützung für den hellen Modus kommt vielleicht bald.
 
 **Git** muss installiert sein (Claude lädt das Plugin damit herunter). Unter Windows: [Git for Windows](https://git-scm.com/download/win), mit den Standardoptionen.
-
-**In einer virtuellen Maschine** (VMware, Hyper-V, VirtualBox…) wechseln die Hintergründe die Farbe, bleiben aber stehen, weil die App bei vielen virtuellen Grafiktreibern die Hardwarebeschleunigung abschaltet. Beenden Sie Claude vollständig (auch im Infobereich neben der Uhr) und starten Sie es mit `claude.exe --ignore-gpu-blocklist`.
 
 ## Installation
 
@@ -49,6 +47,24 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```
 
 Neue Sitzung öffnen oder `/reload-plugins` eingeben. Start: Hintergrund an, Szene **horizon**, Sprache Englisch (im Dashboard änderbar, wird gemerkt).
+
+## Wenn die Hintergründe sich nicht bewegen
+
+Die Hintergründe wechseln die Farbe je nach Claudes Arbeit, sollen sich aber auch bewegen und ein- und ausblenden. Wenn sie stillstehen, prüfen Sie der Reihe nach:
+
+1. **Windows-Animationen an:** **Einstellungen › Barrierefreiheit › Visuelle Effekte › Animationseffekte**. Außerdem unter **Erweiterte Systemeinstellungen › Leistung** „Steuerelemente und Elemente innerhalb von Fenstern animieren“ angehakt.
+2. **In einer virtuellen Maschine** (VMware, Hyper-V, VirtualBox…): 3D-Grafik einschalten (VMware: **VM › Settings › Display › Accelerate 3D graphics**) und die Gastwerkzeuge installieren (VMware Tools).
+3. **Immer noch still?** Die App misstraut oft dem Grafiktreiber einer VM und zeichnet ohne Hardwarebeschleunigung. Beenden Sie Claude vollständig (auch im Infobereich neben der Uhr) und starten Sie es in PowerShell mit dem Schalter `--ignore-gpu-blocklist`:
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+Oder legen Sie eine Desktop-Verknüpfung **Claude (VM)** an, die es immer so startet (funktioniert auch nach Updates):
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## Ausschalten oder entfernen
 

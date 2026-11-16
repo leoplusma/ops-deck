@@ -24,13 +24,11 @@
 
 ## 要求
 
-较新版本的 Claude 桌面应用（已在 Windows 11 上用 Claude Code 2.1.325 测试）。动画背景需要在 Windows 中开启 **设置 › 辅助功能 › 视觉效果 › 动画效果**。
+较新版本的 Claude 桌面应用（已在 Windows 11 上用 Claude Code 2.1.325 测试）。
 
 **为深色模式设计。**在应用的浅色模式下暂时显示不佳；浅色模式支持可能很快推出。
 
 需要安装 **Git**（Claude 用它来下载插件）。Windows 上请安装 [Git for Windows](https://git-scm.com/download/win)，使用默认选项即可。
-
-**在虚拟机中**（VMware、Hyper-V、VirtualBox…）背景会变色但不会动，因为应用会对许多虚拟显卡驱动关闭硬件加速。请完全退出 Claude（包括时钟旁的托盘图标），然后用 `claude.exe --ignore-gpu-blocklist` 启动。
 
 ## 安装
 
@@ -49,6 +47,24 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```
 
 打开新会话，或输入 `/reload-plugins`。初始设置：背景开启，场景 **horizon**，语言为英语（可在仪表板中更改并会被记住）。
+
+## 如果背景不动
+
+背景会随 Claude 的工作变色，同时也应该移动并淡入淡出。如果它们静止不动，请依次检查：
+
+1. **Windows 动画已开启：** **设置 › 辅助功能 › 视觉效果 › 动画效果**。另外在 **高级系统设置 › 性能** 中勾选“在窗口内部动画控件和元素”。
+2. **在虚拟机中**（VMware、Hyper-V、VirtualBox…）：开启 3D 图形（VMware：**VM › Settings › Display › Accelerate 3D graphics**），并安装客户机工具（VMware Tools）。
+3. **仍然不动？** 应用常常不信任虚拟机的显卡驱动，会在没有硬件加速的情况下绘制。请完全退出 Claude（包括时钟旁的托盘图标），然后在 PowerShell 中用 `--ignore-gpu-blocklist` 开关启动：
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+或者在桌面创建一个始终这样启动的快捷方式 **Claude (VM)**（更新后仍然有效）：
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## 关闭或卸载
 

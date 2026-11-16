@@ -24,13 +24,11 @@
 
 ## Prérequis
 
-Une version récente de l’application Claude (testé avec Claude Code 2.1.325 sous Windows 11). Les fonds animés demandent **Paramètres › Accessibilité › Effets visuels › Effets d’animation** activés dans Windows.
+Une version récente de l’application Claude (testé avec Claude Code 2.1.325 sous Windows 11).
 
 **Conçu pour le mode sombre.** En mode clair, l’affichage n’est pas encore correct ; la prise en charge du mode clair arrivera peut-être bientôt.
 
 **Git** doit être installé (Claude s’en sert pour télécharger le plugin). Sous Windows : [Git for Windows](https://git-scm.com/download/win), avec les options par défaut.
-
-**Dans une machine virtuelle** (VMware, Hyper-V, VirtualBox…), les fonds changent de couleur mais restent immobiles, car l’application désactive l’accélération graphique pour de nombreux pilotes virtuels. Quittez complètement Claude (y compris l’icône près de l’horloge) et relancez-le avec `claude.exe --ignore-gpu-blocklist`.
 
 ## Installation
 
@@ -49,6 +47,24 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```
 
 Ouvrez une nouvelle session ou tapez `/reload-plugins`. Au départ : fond activé, scène **horizon**, langue anglaise (modifiable dans le tableau de bord, mémorisée).
+
+## Si les fonds ne bougent pas
+
+Les fonds changent de couleur selon le travail de Claude, mais ils doivent aussi bouger et apparaître en fondu. S’ils restent immobiles, vérifiez dans l’ordre :
+
+1. **Animations de Windows activées :** **Paramètres › Accessibilité › Effets visuels › Effets d’animation**. Et dans **Paramètres système avancés › Performances**, « Animer les contrôles et les éléments à l’intérieur des fenêtres » coché.
+2. **Dans une machine virtuelle** (VMware, Hyper-V, VirtualBox…) : activez les graphismes 3D (VMware : **VM › Settings › Display › Accelerate 3D graphics**) et installez les outils invités (VMware Tools).
+3. **Toujours immobiles ?** L’application se méfie souvent du pilote graphique d’une VM et dessine sans accélération matérielle. Quittez complètement Claude (y compris l’icône près de l’horloge) et lancez-le depuis PowerShell avec l’option `--ignore-gpu-blocklist` :
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+Ou créez un raccourci **Claude (VM)** sur le bureau qui le lance toujours ainsi (il fonctionne aussi après les mises à jour) :
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## Désactiver ou supprimer
 

@@ -59,9 +59,23 @@ Answer `y` to add the marketplace, then pick the user scope with Enter. Open a n
 
 On first run the background is on with the **horizon** scene, the language is **English**, and the dashboard opens by itself. Whatever you change is remembered.
 
-> The moving backgrounds need Windows **Settings › Accessibility › Visual effects › Animation effects** turned on. With it off, Windows asks apps not to animate and the scenes stay still.
+## If the backgrounds don't move
 
-> **In a virtual machine** (VMware, Hyper-V, VirtualBox…) the backgrounds change colour but stay still, because the app turns off hardware graphics for many virtual display drivers. Quit Claude completely (the tray icon by the clock too) and start it with `claude.exe --ignore-gpu-blocklist`. To find `claude.exe`, run `Get-Process claude | Select-Object -First 1 -ExpandProperty Path` in PowerShell while Claude is open.
+The backgrounds change colour with Claude's work, but they should also move and fade in and out. If they stand still, check these in order:
+
+1. **Windows animations on:** **Settings › Accessibility › Visual effects › Animation effects**. Also, under **Advanced system settings › Performance**, keep "Animate controls and elements inside windows" ticked.
+2. **In a virtual machine** (VMware, Hyper-V, VirtualBox…): turn on its 3D graphics (VMware: **VM › Settings › Display › Accelerate 3D graphics**) and install its guest tools (VMware Tools).
+3. **Still standing still?** The app often doesn't trust a virtual machine's display driver and draws without hardware graphics. Quit Claude completely (the tray icon by the clock too) and start it from PowerShell with the `--ignore-gpu-blocklist` switch:
+
+```powershell
+& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe') --ignore-gpu-blocklist
+```
+
+Or make a **Claude (VM)** shortcut on the desktop that always starts it that way (it keeps working after updates):
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
+```
 
 ## Use
 

@@ -28,7 +28,15 @@
 
 **Git** がインストールされている必要があります（Claude がプラグインのダウンロードに使います）。Windows では [Git for Windows](https://git-scm.com/download/win) を既定の設定でインストールしてください。
 
+**仮想マシンでは**（VMware、Hyper-V、VirtualBox…）背景の色は変わりますが動きません。アプリが多くの仮想グラフィックドライバーでハードウェアアクセラレーションを無効にするためです。Claude を完全に終了し（時計の横のトレイアイコンも）、`claude.exe --ignore-gpu-blocklist` で起動してください。
+
 ## インストール
+
+**いちばん簡単な方法：**アプリのセッションで Claude に頼むと、すべての手順を自分で行います：
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
 
 **デスクトップアプリで：** 入力欄の横の **+** → **Plugins** → **Add marketplace** → `leoplusma/ops-deck` → **Add plugin**。
 

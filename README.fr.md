@@ -28,7 +28,15 @@ Une version récente de l’application Claude (testé avec Claude Code 2.1.325 
 
 **Git** doit être installé (Claude s’en sert pour télécharger le plugin). Sous Windows : [Git for Windows](https://git-scm.com/download/win), avec les options par défaut.
 
+**Dans une machine virtuelle** (VMware, Hyper-V, VirtualBox…), les fonds changent de couleur mais restent immobiles, car l’application désactive l’accélération graphique pour de nombreux pilotes virtuels. Quittez complètement Claude (y compris l’icône près de l’horloge) et relancez-le avec `claude.exe --ignore-gpu-blocklist`.
+
 ## Installation
+
+**Le plus simple :** demandez-le à Claude dans une session de l’application, il fait toutes les étapes lui-même :
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
 
 **Dans l’application :** **+** à côté de la zone de saisie → **Plugins** → **Add marketplace** → `leoplusma/ops-deck` → **Add plugin**.
 

@@ -39,6 +39,12 @@ A recent Claude desktop app (tested with Claude Code 2.1.325 on Windows 11). Old
 
 ## Install
 
+**The easy way:** ask Claude in a desktop app session, and it does every step itself:
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
+
 **In the desktop app:** click **+** next to the prompt box, then **Plugins** → **Add marketplace** → `leoplusma/ops-deck` → **Add plugin** (ops-deck).
 
 **Or in a terminal session** (`claude`):
@@ -52,6 +58,8 @@ Answer `y` to add the marketplace, then pick the user scope with Enter. Open a n
 On first run the background is on with the **horizon** scene, the language is **English**, and the dashboard opens by itself. Whatever you change is remembered.
 
 > The moving backgrounds need Windows **Settings › Accessibility › Visual effects › Animation effects** turned on. With it off, Windows asks apps not to animate and the scenes stay still.
+
+> **In a virtual machine** (VMware, Hyper-V, VirtualBox…) the backgrounds change colour but stay still, because the app turns off hardware graphics for many virtual display drivers. Quit Claude completely (the tray icon by the clock too) and start it with `claude.exe --ignore-gpu-blocklist`. To find `claude.exe`, run `Get-Process claude | Select-Object -First 1 -ExpandProperty Path` in PowerShell while Claude is open.
 
 ## Use
 

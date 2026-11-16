@@ -28,7 +28,15 @@
 
 Πρέπει να υπάρχει εγκατεστημένο το **Git** (το Claude το χρησιμοποιεί για να κατεβάσει το plugin). Σε Windows: [Git for Windows](https://git-scm.com/download/win), με τις προεπιλεγμένες ρυθμίσεις.
 
+**Σε εικονική μηχανή** (VMware, Hyper-V, VirtualBox…) τα φόντα αλλάζουν χρώμα αλλά μένουν ακίνητα, γιατί η εφαρμογή απενεργοποιεί την επιτάχυνση γραφικών για πολλούς εικονικούς οδηγούς οθόνης. Κλείστε εντελώς το Claude (και από το εικονίδιο δίπλα στο ρολόι) και ανοίξτε το με `claude.exe --ignore-gpu-blocklist`.
+
 ## Εγκατάσταση
+
+**Ο πιο εύκολος τρόπος:** ζητήστε το από το Claude, σε μια συνεδρία της εφαρμογής, και θα κάνει όλα τα βήματα μόνο του:
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
 
 **Στην εφαρμογή:** **+** δίπλα στο πεδίο του prompt → **Plugins** → **Add marketplace** → `leoplusma/ops-deck` → **Add plugin**.
 

@@ -28,7 +28,15 @@
 
 需要安装 **Git**（Claude 用它来下载插件）。Windows 上请安装 [Git for Windows](https://git-scm.com/download/win)，使用默认选项即可。
 
+**在虚拟机中**（VMware、Hyper-V、VirtualBox…）背景会变色但不会动，因为应用会对许多虚拟显卡驱动关闭硬件加速。请完全退出 Claude（包括时钟旁的托盘图标），然后用 `claude.exe --ignore-gpu-blocklist` 启动。
+
 ## 安装
+
+**最简单的方法：**在应用的会话中让 Claude 来做，它会自己完成所有步骤：
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
 
 **在桌面应用中：** 点击输入框旁的 **+** → **Plugins** → **Add marketplace** → `leoplusma/ops-deck` → **Add plugin**。
 

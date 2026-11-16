@@ -28,7 +28,15 @@ Una versión reciente de la app de escritorio de Claude (probado con Claude Code
 
 Debe estar instalado **Git** (Claude lo usa para descargar el plugin). En Windows: [Git for Windows](https://git-scm.com/download/win), con las opciones predeterminadas.
 
+**En una máquina virtual** (VMware, Hyper-V, VirtualBox…) los fondos cambian de color pero se quedan quietos, porque la app desactiva la aceleración gráfica con muchos controladores virtuales. Cierra Claude por completo (también el icono junto al reloj) y ábrelo con `claude.exe --ignore-gpu-blocklist`.
+
 ## Instalación
+
+**Lo más fácil:** pídeselo a Claude en una sesión de la app y él hará todos los pasos:
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
 
 **En la app:** **+** junto al cuadro de texto → **Plugins** → **Add marketplace** → `leoplusma/ops-deck` → **Add plugin**.
 

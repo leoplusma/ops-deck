@@ -30,7 +30,15 @@
 
 يجب أن يكون **Git** مثبتًا (يستخدمه Claude لتنزيل الإضافة). على Windows: [Git for Windows](https://git-scm.com/download/win)، بالخيارات الافتراضية.
 
+**في جهاز افتراضي** (VMware وHyper-V وVirtualBox…) تتغيّر ألوان الخلفيات لكنها تبقى ثابتة، لأن التطبيق يوقف تسريع الرسوميات مع كثير من برامج تشغيل الشاشة الافتراضية. أغلق Claude تمامًا (ومن الأيقونة بجانب الساعة أيضًا) ثم شغّله بالأمر `claude.exe --ignore-gpu-blocklist`.
+
 ## التثبيت
+
+**أسهل طريقة:** اطلب ذلك من Claude في جلسة داخل التطبيق، وسيقوم بكل الخطوات بنفسه:
+
+```
+Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for my user, using the claude CLI the desktop app bundles
+```
 
 **في التطبيق:** **+** بجانب مربع الكتابة ← **Plugins** ← **Add marketplace** ← `leoplusma/ops-deck` ← **Add plugin**.
 

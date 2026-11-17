@@ -19,7 +19,7 @@
 
 ## ماذا يفعل
 
-- **خمس خلفيات متحركة** (circuit وhorizon وdata room وcode rain وsignal). لون واحد يخبرك بما يفعله Claude: **بنفسجي** يفكر، **كهرماني** ملفات، **أخضر** أوامر، **أرجواني** الويب. يتحول كل شيء إلى **الأحمر** عند فشل أداة.
+- **تسع خلفيات متحركة**: خمس داكنة (circuit, horizon, data room, code rain, signal) وأربع فاتحة (ink plotter, halftone tide, digital cream, heartline). المشهد الفاتح يحوّل أيضًا التطبيق والشريط واللوحة إلى ألوان فاتحة. لون واحد يخبرك بما يفعله Claude: **بنفسجي** يفكر، **كهرماني** ملفات، **أخضر** أوامر، **أرجواني** الويب. يتحول كل شيء إلى **الأحمر** عند فشل أداة.
 - **شريط حالة** فوق مربع الكتابة: السياق، واستخدام الخطة (5 ساعات وأسبوعيًا)، والوقت، واستدعاءات الأدوات، والتكلفة التقديرية.
 - **لوحة معلومات الجلسة**: ما غادر حاسوبك، ورسم الملفات، والأدوات، والوكلاء المساعدون، والجولات الأخيرة، والمساعدة، وتبويب عرض تجريبي.
 - **عشر لغات.** كل شيء يعمل على حاسوبك: لا يرسل ops-deck أي شيء إلى أي مكان.
@@ -27,8 +27,6 @@
 ## المتطلبات
 
 إصدار حديث من تطبيق Claude للحاسوب (تمت التجربة مع Claude Code 2.1.325 على Windows 11).
-
-**مصمّم للوضع الداكن.** لا يظهر بشكل صحيح بعد في الوضع الفاتح للتطبيق؛ قد يأتي دعم الوضع الفاتح قريبًا.
 
 يجب أن يكون **Git** مثبتًا (يستخدمه Claude لتنزيل الإضافة). على Windows: [Git for Windows](https://git-scm.com/download/win)، بالخيارات الافتراضية.
 
@@ -67,6 +65,12 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```powershell
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
+
+## هل هناك ما لا يعمل؟
+
+اكتب `/hud-debug` في جلسة، أو اطلب من Claude *"ops-deck debug"*. ستحصل على تقرير قصير: ما حفظه ops-deck (الخلفية والمشهد واللوحة)، وآخر ما رسمه، وكيف جرى بدء التشغيل. يُكتب التقرير نفسه أيضًا في `debug.txt` داخل مجلد الإضافة.
+
+للإبلاغ عن مشكلة، [افتح issue](https://github.com/leoplusma/ops-deck/issues) والصق التقرير. راجعه أولًا: فهو يتضمن نموذج الجلسة واستخدامها، وربما مجلدها.
 
 ## الإيقاف أو الإزالة
 

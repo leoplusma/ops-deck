@@ -162,12 +162,27 @@ test('the scene list offers every background and switches to the one picked', as
     return { value: undefined }
   })
   on('store.get', (_$, e) => ({ value: saved[e.key] }))
-  on('theme.set', () => ({ value: { isDrawn: true, requestId: 'test' } }))
+  const looks: unknown[] = []
+  on('theme.set', (_$, e) => {
+    looks.push(e)
+    return { value: { isDrawn: true, requestId: 'test' } }
+  })
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
   const scene = await ui.find({ type: 'Select', key: 'scene' })
-  const options = scene?.props.options as { value: string }[] | undefined
-  expect(options?.map(o => o.value)).toEqual(['none', 'circuit', 'horizon', 'data-room', 'code-rain', 'signal'])
+  const options = scene?.props.options as { value: string; label: string }[] | undefined
+  expect(options?.map(o => o.value)).toEqual([
+    'none', 'circuit', 'horizon', 'data-room', 'code-rain', 'signal', 'ink-plotter', 'halftone-tide', 'digital-cream', 'heartline',
+  ])
+  // The light scenes carry a small sun in the list.
+  expect(options?.find(o => o.value === 'ink-plotter')?.label).toBe('ink plotter ☀')
+  expect(options?.find(o => o.value === 'signal')?.label).toBe('signal')
+
+  // A light scene takes the paper theme (the app turns light), and a dark one the HUD theme.
+  await ui.select({ key: 'scene', value: 'halftone-tide' })
+  expect(JSON.stringify(looks[looks.length - 1])).toContain('HUD paper')
+  await ui.select({ key: 'scene', value: 'signal' })
+  expect(JSON.stringify(looks[looks.length - 1])).not.toContain('HUD paper')
   await ui.select({ key: 'scene', value: 'data-room' })
   expect((await ui.find({ type: 'Select', key: 'scene' }))?.props.value).toBe('data-room')
   expect(saved.background).toBe(true)

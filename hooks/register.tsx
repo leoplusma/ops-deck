@@ -25,6 +25,25 @@ const { theme, problems } = makeColors({
   },
 })
 
+// Paper, for the light scenes: cream surfaces, navy ink, deep teal accent.
+const { theme: paperTheme, problems: paperProblems } = makeColors({
+  label: 'HUD paper',
+  only: 'light',
+  roles: { accent: '#0e7490', danger: '#b4233c', success: '#15803d', warning: '#b45309', pro: '#6d28d9' },
+  light: {
+    gray: {
+      anchors: {
+        'surface-0': '#efe4cc',
+        'surface-1': '#f3ead6',
+        'surface-2': '#f8f1e2',
+        'text-primary': '#1f2a44',
+        'text-secondary': '#3d4a66',
+        'text-muted': '#6b6a72',
+      },
+    },
+  },
+})
+
 const isThinking = atom({ plugin: 'ops-deck', key: 'isThinking' } as const, false)
 const readout = atom({ plugin: 'ops-deck', key: 'readout' } as const, null as Readout | null)
 const alert = atom({ plugin: 'ops-deck', key: 'alert' } as const, null as Alert)
@@ -61,6 +80,27 @@ const FADE_OUT_CSS = '.all{animation:out 2.5s ease-in forwards}@keyframes out{to
 const ALERT_EDGE_CSS = '.flash{opacity:.4}'
 // A fresh start fades in, the end fades out; an alert and the return from one show at once.
 const fadeFor = (mode: Mode) => (mode === 'busy' ? FADE_IN_CSS : mode === 'idle' ? FADE_OUT_CSS : '')
+
+// Shared by every wave in the scenes: a smooth curve through points (Catmull-Rom, written
+// as cubic Béziers), so a wave has no corners or flat facets at any window size. `join`
+// starts the path (M) or carries on a shape already started (L).
+// Waves also keep any second harmonic small (0.1 of the main one at most): a stronger one
+// flattens the crests into shelves and pulls the slopes straight, and the flow is lost.
+type XY = [number, number]
+const curveThrough = (points: readonly XY[], join: 'M' | 'L' = 'M') => {
+  const first = points[0]
+  if (first === undefined) return ''
+  const at = (p: XY) => `${Math.round(p[0] * 10) / 10} ${Math.round(p[1] * 10) / 10}`
+  let d = `${join}${at(first)}`
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const p1 = points[i] ?? first
+    const p2 = points[i + 1] ?? p1
+    const p0 = points[i - 1] ?? p1
+    const p3 = points[i + 2] ?? p2
+    d += `C${at([p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6])} ${at([p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6])} ${at(p2)}`
+  }
+  return d
+}
 
 // What Claude is doing, shown by every scene in one element of the activity colour (the
 // only colour shared by all scenes): thinking, working with files, running a command or
@@ -783,18 +823,18 @@ const SG_PARTS = (() => {
 const sgWave = (amp: number, length: number, phase: number, jagged = false) => {
   const points: [number, number][] = []
   // A jagged wave starts one corner early, so its first rounded corner is already on screen.
-  for (let x = jagged ? -length / 8 : 0; x <= 1600 + length; x += jagged ? length / 8 : 8) {
+  for (let x = jagged ? -length / 8 : 0; x <= 1600 + length; x += length / (jagged ? 8 : 16)) {
     const a = (x / length) * Math.PI * 2 + phase
-    // A second harmonic gives the wave some character; both repeat every wavelength, so
-    // the slide loops cleanly.
+    // A small second harmonic gives the wave some character; both repeat every
+    // wavelength, so the slide loops cleanly.
     const y = jagged
       ? ((x / (length / 8)) % 2 === 0 ? 1 : -1) * amp * 1.3 * (0.4 + 0.6 * Math.abs(Math.sin(a)))
-      : amp * (Math.sin(a) + 0.3 * Math.sin(2 * a + 1)) * 0.85
+      : amp * (Math.sin(a) + 0.1 * Math.sin(2 * a + 1)) * 0.95
     points.push([x, SG_MID + y])
   }
   const at = ([x, y]: [number, number]) => `${x.toFixed(0)} ${y.toFixed(1)}`
   if (!jagged) {
-    return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${at(p)}`).join('')
+    return curveThrough(points)
   }
   // Jagged, with rounded peaks: a curve from midpoint to midpoint, bent by each peak.
   const mid = (p: [number, number], q: [number, number]): [number, number] => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]
@@ -866,12 +906,316 @@ ${flash}
 </svg>`
 }
 
+// The light scenes (cream paper, dark ink): the activity colour as ink, deep enough to
+// read on paper, and the red of an alert.
+const ACTIVITY_INK: Record<Activity, string> = {
+  think: '#6d28d9',
+  files: '#b45309',
+  run: '#047857',
+  web: '#be185d',
+}
+const PAPER = '#f3ead6'
+const PAPER_ALERT = '#f7e2da'
+// A light scene's alert: the paper warms and a soft red vignette rises at the edges.
+const paperFlash = (id: string) =>
+  `<radialGradient id="${id}" cx=".5" cy=".5" r=".75"><stop offset=".55" stop-color="#c0392b" stop-opacity="0"/><stop offset="1" stop-color="#c0392b" stop-opacity=".55"/></radialGradient>`
+
+// Scene "ink plotter": plain cream paper with contour lines drifting slowly
+// across it like a moving map. One contour is in the activity colour and a pen head travels
+// along it, inking it as it goes. Alert: the ink turns red and the paper warms.
+//
+// Every contour repeats every 800 px, and the whole sheet slides by 800 px, so the drift
+// loops without a seam. The pen and the inked line run on one 12 s clock.
+const IP_WAVE = 800
+const ipContour = (row: number) => {
+  const base = 120 + row * 95
+  const amp = 26 + (row % 3) * 9
+  const points: XY[] = []
+  for (let x = 0; x <= 1600 + IP_WAVE; x += 50) {
+    const a = (x / IP_WAVE) * Math.PI * 2
+    points.push([x, base + amp * Math.sin(a + row * 0.7) + amp * 0.1 * Math.sin(2 * a + row * 1.9)])
+  }
+  return curveThrough(points)
+}
+const IP_ROWS = Array.from({ length: 9 }, (_, row) => ipContour(row))
+const IP_PEN_ROW = 4
+
+const inkScene = (mode: Mode, act: Activity) => {
+  const busy = mode !== 'idle'
+  const red = mode === 'alert'
+  const ink = red ? '#7a1f2b' : '#1f2f5c'
+  const pen = red ? '#c0392b' : ACTIVITY_INK[act]
+  const paper = red ? PAPER_ALERT : PAPER
+  const drift = busy ? `animation:drift ${red ? 20 : 40}s linear infinite` : ''
+  const draw = busy ? `animation:ink ${red ? 6 : 12}s linear infinite` : ''
+  const flash = red ? '<rect class="flash" width="1600" height="1000" fill="url(#ipr)"/>' : ''
+  const penPath = IP_ROWS[IP_PEN_ROW] ?? ''
+  const lines = IP_ROWS.map((d, row) => (row === IP_PEN_ROW ? '' : `<path class="ct" d="${d}"/>`)).join('')
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+<style>
+.ct{fill:none;stroke:${ink};stroke-opacity:.2;stroke-width:1.1}
+.sheet{${drift}}
+.ghost{fill:none;stroke:${pen};stroke-opacity:.08;stroke-width:2}
+.inked{fill:none;stroke:${pen};stroke-opacity:.45;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1000 1000;stroke-dashoffset:1000;${draw}}
+.pen{fill:${pen};fill-opacity:.6;offset-path:path('${penPath}');offset-rotate:0deg;offset-distance:0%;${busy ? `animation:pen ${red ? 6 : 12}s linear infinite` : 'opacity:0'}}
+@keyframes drift{to{transform:translateX(-${IP_WAVE}px)}}
+@keyframes ink{to{stroke-dashoffset:0}}
+@keyframes pen{to{offset-distance:100%}}
+${ALERT_EDGE_CSS}
+${fadeFor(mode)}
+${PHASE_CSS}
+</style>
+<defs>
+${paperFlash('ipr')}
+</defs>
+<rect width="1600" height="1000" fill="${paper}"/>
+<g class="all">
+<g class="sheet">
+${lines}
+<path class="ghost" d="${penPath}"/>
+<path class="inked" pathLength="1000" d="${penPath}"/>
+<circle class="pen" r="6"/>
+</g>
+${flash}
+</g>
+</svg>`
+}
+
+// Scene "halftone tide": cream paper printed with a dot screen, like an old newspaper
+// photo. Two wave-shaped bands slide across it: inside the wide one the dots are bigger,
+// inside the narrow one bigger still and in the activity colour, so the dots seem to swell
+// as the tide passes. Alert: the tide runs faster and turns red.
+//
+// Cheap to draw: the dots are three fixed patterns, and only the two band shapes move,
+// as masks. Both bands repeat every 800 px and slide by 800 px, so the loop has no seam.
+const HT_STEP = 26
+const htBand = (mid: number, amp: number, half: number, phase: number) => {
+  const top: XY[] = []
+  const bottom: XY[] = []
+  for (let x = 0; x <= 1600 + IP_WAVE; x += 50) {
+    const a = (x / IP_WAVE) * Math.PI * 2 + phase
+    const y = mid + amp * Math.sin(a) + amp * 0.1 * Math.sin(2 * a + 1)
+    // The band swells a little and thins again, gently, so its edges keep the flow.
+    const h = half * (0.9 + 0.1 * Math.sin(a + phase + 1.2))
+    top.push([x, y - h])
+    bottom.unshift([x, y + h])
+  }
+  return `${curveThrough(top)}${curveThrough(bottom, 'L')}Z`
+}
+const HT_WIDE = htBand(520, 150, 190, 0)
+const HT_CORE = htBand(520, 150, 52, 0)
+
+const halftoneScene = (mode: Mode, act: Activity) => {
+  const busy = mode !== 'idle'
+  const red = mode === 'alert'
+  const ink = red ? '#7a1f2b' : '#1f2f5c'
+  const tide = red ? '#c0392b' : ACTIVITY_INK[act]
+  const paper = red ? PAPER_ALERT : PAPER
+  const slide = (seconds: number) => (busy ? `animation:tide ${(red ? seconds / 2 : seconds).toFixed(1)}s linear infinite` : '')
+  const flash = red ? '<rect class="flash" width="1600" height="1000" fill="url(#htr)"/>' : ''
+  const dotAt = (r: number, fill: string, opacity: number) =>
+    `<circle cx="${HT_STEP / 2}" cy="${HT_STEP / 2}" r="${r}" fill="${fill}" fill-opacity="${opacity}"/>`
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+<style>
+.wide{${slide(30)}}
+.core{${slide(18)}}
+@keyframes tide{to{transform:translateX(-${IP_WAVE}px)}}
+${ALERT_EDGE_CSS}
+${fadeFor(mode)}
+${PHASE_CSS}
+</style>
+<defs>
+<pattern id="hts" width="${HT_STEP}" height="${HT_STEP}" patternUnits="userSpaceOnUse">${dotAt(2.2, ink, 0.1)}</pattern>
+<pattern id="htm" width="${HT_STEP}" height="${HT_STEP}" patternUnits="userSpaceOnUse">${dotAt(5, ink, 0.13)}</pattern>
+<pattern id="htl" width="${HT_STEP}" height="${HT_STEP}" patternUnits="userSpaceOnUse">${dotAt(6.5, tide, 0.32)}</pattern>
+<mask id="htw" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1000"><path class="wide" fill="#fff" d="${HT_WIDE}"/></mask>
+<mask id="htc" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1000"><path class="core" fill="#fff" d="${HT_CORE}"/></mask>
+${paperFlash('htr')}
+</defs>
+<rect width="1600" height="1000" fill="${paper}"/>
+<g class="all">
+<rect width="1600" height="1000" fill="url(#hts)"/>
+<rect width="1600" height="1000" fill="${paper}" mask="url(#htw)"/>
+<rect width="1600" height="1000" fill="url(#htm)" mask="url(#htw)"/>
+<rect width="1600" height="1000" fill="${paper}" mask="url(#htc)"/>
+<rect width="1600" height="1000" fill="url(#htl)" mask="url(#htc)"/>
+${flash}
+</g>
+</svg>`
+}
+
+// Scene "digital cream": warm ivory with soft ribbons of cream sweeping across, each edged
+// with a fine gold line and a fan of hair-thin gold lines beside it, like premium paper.
+// A thin line in the activity colour runs along the lower ribbon. Alert: the gold turns
+// rose and the ribbons drift faster.
+//
+// The ribbons repeat every screen width (1600 px) and slide by that much, the top one to
+// the left and the lower one to the right, so both drifts loop without a seam.
+const DC_WIDTH = 1600
+const dcWave = (base: number, amp: number, phase: number) => (x: number) => {
+  const a = (x / DC_WIDTH) * Math.PI * 2 + phase
+  return base + amp * Math.sin(a) + amp * 0.1 * Math.sin(2 * a + phase * 1.7)
+}
+const DC_XS = Array.from({ length: 49 }, (_, i) => -DC_WIDTH + i * 100)
+const dcLine = (y: (x: number) => number) => curveThrough(DC_XS.map((x): XY => [x, y(x)]))
+// The band between two waves, filled.
+const dcBand = (upper: (x: number) => number, lower: (x: number) => number) =>
+  `${dcLine(upper)}${curveThrough([...DC_XS].reverse().map((x): XY => [x, lower(x)]), 'L')}Z`
+// A fan of thin lines spreading between two waves.
+const dcFan = (from: (x: number) => number, to: (x: number) => number, count: number) =>
+  Array.from({ length: count }, (_, i) => {
+    const k = (i + 1) / (count + 1)
+    return `<path class="hair" d="${dcLine(x => from(x) + (to(x) - from(x)) * k * k)}"/>`
+  }).join('')
+const DC_TOP = (() => {
+  const a = dcWave(150, 90, 0.4)
+  const b = dcWave(330, 120, 1.1)
+  const edge = dcWave(345, 120, 1.1)
+  return { band: dcBand(dcWave(-80, 60, 0.2), a), soft: dcBand(a, b), edge: dcLine(edge), fan: dcFan(edge, dcWave(230, 100, 0.7), 9) }
+})()
+const DC_LOW = (() => {
+  const a = dcWave(690, 130, 2.3)
+  const b = dcWave(860, 110, 2.9)
+  const edge = dcWave(700, 130, 2.3)
+  return {
+    soft: dcBand(a, dcWave(1100, 40, 3)),
+    band: dcBand(b, dcWave(1100, 40, 3)),
+    edge: dcLine(edge),
+    accent: dcLine(dcWave(770, 120, 2.6)),
+    fan: dcFan(edge, dcWave(820, 150, 2.0), 11),
+  }
+})()
+
+const creamScene = (mode: Mode, act: Activity) => {
+  const busy = mode !== 'idle'
+  const red = mode === 'alert'
+  const gold = red ? '#c0563f' : '#c99a2e'
+  const hair = red ? '#d98a78' : '#d8b45c'
+  const accent = red ? '#c0392b' : ACTIVITY_INK[act]
+  const ground = red ? '#fbeee8' : '#fbf6ea'
+  const deep = red ? '#f3d9cf' : '#f1e5c9'
+  const move = (dir: 'left' | 'right', seconds: number) =>
+    busy ? `animation:${dir} ${(red ? seconds / 2 : seconds).toFixed(1)}s linear infinite` : ''
+  const flash = red ? '<rect class="flash" width="1600" height="1000" fill="url(#dcr)"/>' : ''
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+<style>
+.top{${move('left', 90)}}
+.low{${move('right', 70)}}
+.edge{fill:none;stroke:${gold};stroke-opacity:.7;stroke-width:2.2}
+.hair{fill:none;stroke:${hair};stroke-opacity:.38;stroke-width:.9}
+.accent{fill:none;stroke:${accent};stroke-opacity:.35;stroke-width:1.6}
+@keyframes left{to{transform:translateX(-${DC_WIDTH}px)}}
+@keyframes right{to{transform:translateX(${DC_WIDTH}px)}}
+${ALERT_EDGE_CSS}
+${fadeFor(mode)}
+${PHASE_CSS}
+</style>
+<defs>
+<linearGradient id="dcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ground}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
+<linearGradient id="dcb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${deep}" stop-opacity=".9"/><stop offset="1" stop-color="${deep}" stop-opacity=".35"/></linearGradient>
+<linearGradient id="dcw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+${paperFlash('dcr')}
+</defs>
+<rect width="1600" height="1000" fill="${ground}"/>
+<g class="all">
+<rect width="1600" height="1000" fill="url(#dcg)"/>
+<g class="top">
+<path fill="url(#dcw)" d="${DC_TOP.band}"/>
+<path fill="url(#dcb)" d="${DC_TOP.soft}"/>
+${DC_TOP.fan}
+<path class="edge" d="${DC_TOP.edge}"/>
+</g>
+<g class="low">
+<path fill="url(#dcb)" d="${DC_LOW.soft}"/>
+<path fill="url(#dcw)" d="${DC_LOW.band}"/>
+${DC_LOW.fan}
+<path class="edge" d="${DC_LOW.edge}"/>
+<path class="accent" d="${DC_LOW.accent}"/>
+</g>
+${flash}
+</g>
+</svg>`
+}
+
+// Scene "heartline": a photo studio's backdrop in warm taupe, lit in the middle and dark at
+// the corners, with the wall meeting a lighter floor. Along that seam runs one thin line in
+// the activity colour, a heart monitor's trace with three beats: a bright stretch sweeps from
+// left to right over a faint copy of the whole trace. Alert: the line turns red and the
+// heart races.
+const ST_SEAM = 758
+// One beat, its tall spike on x, all straight strokes like a monitor's trace: a small
+// pointed P, a short flat, a deep dip, the tall spike, back to the line, a small pointed T.
+const stBeat = (x: number) => {
+  const y = ST_SEAM
+  const at = (dx: number, dy: number) => `L${x + dx} ${y + dy}`
+  return [at(-97, 0), at(-81, -14), at(-67, 0), at(-55, 0), at(-27, 69), at(0, -87), at(22, 0), at(38, -14), at(60, 0)].join('')
+}
+// Three beats, evenly spaced: one each side of the chat and one behind it.
+const ST_TRACE = `M0 ${ST_SEAM}${stBeat(400)}${stBeat(800)}${stBeat(1200)}L1600 ${ST_SEAM}`
+
+const heartlineScene = (mode: Mode, act: Activity) => {
+  const busy = mode !== 'idle'
+  const red = mode === 'alert'
+  const line = red ? '#c0392b' : ACTIVITY_INK[act]
+  const flash = red ? '<rect class="flash" width="1600" height="1000" fill="url(#str)"/>' : ''
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+<style>
+.ghost{fill:none;stroke:${line};stroke-opacity:.14;stroke-width:1.6;stroke-linejoin:miter}
+.sweep{fill:none;stroke:${line};stroke-opacity:.75;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:180 1200;stroke-dashoffset:180;${busy ? `animation:sweep ${red ? 1.6 : 3.2}s linear infinite` : 'opacity:0'}}
+@keyframes sweep{to{stroke-dashoffset:-1020}}
+${ALERT_EDGE_CSS}
+${fadeFor(mode)}
+${PHASE_CSS}
+</style>
+<defs>
+<radialGradient id="stw" cx=".5" cy=".36" r=".72"><stop offset="0" stop-color="#eee4d8"/><stop offset=".5" stop-color="#cbb9a6"/><stop offset=".85" stop-color="#a08b78"/><stop offset="1" stop-color="#6f5b4a"/></radialGradient>
+<linearGradient id="stf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6b5a3"/><stop offset=".35" stop-color="#ddcfbf"/><stop offset=".6" stop-color="#e6dacc"/><stop offset="1" stop-color="#d2c2b0"/></linearGradient>
+<radialGradient id="sts" cx=".5" cy="0" r=".7"><stop offset=".55" stop-color="#5c4a3c" stop-opacity="0"/><stop offset="1" stop-color="#5c4a3c" stop-opacity=".45"/></radialGradient>
+<linearGradient id="sth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a6655" stop-opacity="0"/><stop offset="1" stop-color="#7a6655" stop-opacity=".1"/></linearGradient>
+${paperFlash('str')}
+</defs>
+<rect width="1600" height="1000" fill="url(#stw)"/>
+<rect y="${ST_SEAM - 140}" width="1600" height="140" fill="url(#sth)"/>
+<rect y="${ST_SEAM}" width="1600" height="${1000 - ST_SEAM}" fill="url(#stf)"/>
+<rect y="${ST_SEAM}" width="1600" height="${1000 - ST_SEAM}" fill="url(#sts)"/>
+${
+  mode === 'rest'
+    ? ''
+    : `<g class="all">
+<path class="ghost" d="${ST_TRACE}"/>
+<path class="sweep" pathLength="1000" d="${ST_TRACE}"/>
+${flash}
+</g>`
+}
+</svg>`
+}
+// Heartline rests on its bare backdrop, without the line.
+const REST_HEART = heartlineScene('rest', 'think')
+
 // After the fade-out: the dark ground alone, so a redraw has nothing to flash.
 const REST = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><rect width="1600" height="1000" fill="#03061a"/></svg>'
 // The named backgrounds. To add one: write a function drawing it for each mode, add its
-// name to SceneName and SCENE_NAMES, and its drawings to SCENES.
-type SceneName = 'circuit' | 'horizon' | 'data-room' | 'code-rain' | 'signal'
-const SCENE_NAMES: readonly SceneName[] = ['circuit', 'horizon', 'data-room', 'code-rain', 'signal']
+// name to SceneName and SCENE_NAMES, its drawings to SCENES and its look to SCENE_LOOK.
+type SceneName = 'circuit' | 'horizon' | 'data-room' | 'code-rain' | 'signal' | 'ink-plotter' | 'halftone-tide' | 'digital-cream' | 'heartline'
+const SCENE_NAMES: readonly SceneName[] = ['circuit', 'horizon', 'data-room', 'code-rain', 'signal', 'ink-plotter', 'halftone-tide', 'digital-cream', 'heartline']
+// Whether a scene is dark (neon on black) or light (ink on cream paper). The app, the band
+// and the dashboard take the same look as the scene; with the background off, dark.
+type Look = 'dark' | 'light'
+const SCENE_LOOK: Record<SceneName, Look> = {
+  circuit: 'dark',
+  horizon: 'dark',
+  'data-room': 'dark',
+  'code-rain': 'dark',
+  signal: 'dark',
+  'ink-plotter': 'light',
+  'halftone-tide': 'light',
+  'digital-cream': 'light',
+  heartline: 'light',
+}
 // The scene a fresh install starts with: fast and smooth on any screen.
 const DEFAULT_SCENE: SceneName = 'horizon'
 // How a scene's name reads in the dashboard's list: "code-rain" as "code rain".
@@ -887,13 +1231,15 @@ const sceneNamed = (value: unknown): unknown => {
 type SceneFrames = { idle: string; alert: string; rest: string; busy: Record<Activity, string>; steady: Record<Activity, string> }
 const perActivity = (draw: (mode: Mode, act: Activity) => string, mode: Mode) =>
   Object.fromEntries(ACTIVITIES.map(act => [act, draw(mode, act)])) as Record<Activity, string>
-const drawAll = (draw: (mode: Mode, act: Activity) => string): SceneFrames => ({
+const drawAll = (draw: (mode: Mode, act: Activity) => string, rest = REST): SceneFrames => ({
   idle: draw('idle', 'think'),
   busy: perActivity(draw, 'busy'),
   steady: perActivity(draw, 'steady'),
   alert: draw('alert', 'think'),
-  rest: REST,
+  rest,
 })
+// A light scene rests on bare paper.
+const REST_PAPER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><rect width="1600" height="1000" fill="${PAPER}"/></svg>`
 const sceneFrame = (frames: SceneFrames, mode: Mode, act: Activity) =>
   mode === 'busy' || mode === 'steady' ? frames[mode][act] : frames[mode]
 const SCENES: Record<SceneName, SceneFrames> = {
@@ -902,6 +1248,10 @@ const SCENES: Record<SceneName, SceneFrames> = {
   'data-room': drawAll(dataRoomScene),
   'code-rain': drawAll(rainScene),
   signal: drawAll(signalScene),
+  'ink-plotter': drawAll(inkScene, REST_PAPER),
+  'halftone-tide': drawAll(halftoneScene, REST_PAPER),
+  'digital-cream': drawAll(creamScene, REST_PAPER),
+  heartline: drawAll(heartlineScene, REST_HEART),
 }
 // The idle scene starts bright and fades to nothing (forwards), then simply stays up,
 // faded, until the next job: see settleLater. The app first shows a new frame as a still
@@ -911,10 +1261,14 @@ const SCENES: Record<SceneName, SceneFrames> = {
 // Horizon draws its own frost, in the sky only, so the app's glass keeps no blur for it
 // (blur would soften the floor lines behind the chat too). The glass stays on with the same
 // tint, though: with no glass at all, the app paints its panels (the prompt area) solid.
-const lookFor = (name: SceneName): ThemeSetArgs => ({
-  colors: theme,
-  backdrop: { scene: name, glass: { blur: name === 'horizon' ? 0 : 3, tint: '#03061a', opacity: 0.25 } },
-})
+// A light scene takes the paper theme, which makes the app light while it is shown.
+const lookFor = (name: SceneName): ThemeSetArgs =>
+  SCENE_LOOK[name] === 'light'
+    ? { colors: paperTheme, backdrop: { scene: name, glass: { blur: 3, tint: PAPER, opacity: 0.35 } } }
+    : {
+        colors: theme,
+        backdrop: { scene: name, glass: { blur: name === 'horizon' ? 0 : 3, tint: '#03061a', opacity: 0.25 } },
+      }
 const PLAIN: ThemeSetArgs = { colors: theme }
 
 const PANE = 'hud-dashboard'
@@ -926,12 +1280,37 @@ let paneTitle = titleFor(null)
 
 const ALERT_MS = 8000
 // The solid fill inside the band's frame: the theme's darkest surface.
-const BAND_FILL = '#05090f'
-const CYAN = '#22d3ee'
-const GREEN = '#39ff88'
-const RED = '#ff4d6d'
-const AMBER = '#ffb020'
-const MUTED = '#6fa3b3'
+// The band's and dashboard's colours, for the look of the scene shown: neon on dark, or
+// ink on paper. Every render hook calls paintFor first, so they always match the scene.
+const PALETTES: Record<Look, { fill: string; cyan: string; green: string; red: string; amber: string; muted: string; activity: Record<Activity, string>; folder: string; label: string; halo: string }> = {
+  dark: { fill: '#05090f', cyan: '#22d3ee', green: '#39ff88', red: '#ff4d6d', amber: '#ffb020', muted: '#6fa3b3', activity: ACTIVITY_COLOR, folder: '#e3b341', label: '#eafaff', halo: '#05090f' },
+  light: { fill: '#f8f1e2', cyan: '#0e7490', green: '#15803d', red: '#b4233c', amber: '#b45309', muted: '#5b6b78', activity: ACTIVITY_INK, folder: '#9a6700', label: '#1f2a44', halo: PAPER },
+}
+let BAND_FILL = PALETTES.dark.fill
+let CYAN = PALETTES.dark.cyan
+let GREEN = PALETTES.dark.green
+let RED = PALETTES.dark.red
+let AMBER = PALETTES.dark.amber
+let MUTED = PALETTES.dark.muted
+let ACTIVITY_SHOWN = PALETTES.dark.activity
+// The look now: the scene's while the background is on, dark with it off.
+const lookNow = async ($: Engine): Promise<Look> => {
+  const [isOn, name] = await Promise.all([read($, isBackgroundOn), read($, currentScene)])
+  return isOn && isSceneName(name) ? SCENE_LOOK[name] : 'dark'
+}
+const paintFor = async ($: Engine) => {
+  const p = PALETTES[await lookNow($)]
+  BAND_FILL = p.fill
+  CYAN = p.cyan
+  GREEN = p.green
+  RED = p.red
+  AMBER = p.amber
+  MUTED = p.muted
+  ACTIVITY_SHOWN = p.activity
+  FOLDER_YELLOW = p.folder
+  LABEL_TEXT = p.label
+  LABEL_HALO = p.halo
+}
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const clockText = (s: number) => `${pad(Math.floor(s / 60))}:${pad(s % 60)}`
@@ -1079,6 +1458,84 @@ const LOCAL_MCP = /^(ops-deck|ccd_.*|visualize|terminal|scheduled-tasks|computer
 
 type Reached = { host: string; scope: 'web' | 'lan' | 'net' }
 
+// Where each configured MCP server runs, read from the settings that define it: a server
+// started as a command runs on this PC; one reached by URL is local, LAN or web by its host.
+// A server found in none of them (one a plugin brings, say) is shown as plain network,
+// never as web, since how it connects is unknown. Keys are the names as tool names spell
+// them (mcp__<name>__tool: anything but letters, digits, _ and - becomes _).
+const MCP_PLACES = new Map<string, 'local' | Reached>()
+const mcpKey = (name: string) => name.replace(/[^A-Za-z0-9_-]/g, '_').toLowerCase()
+const mcpPlaceOf = (name: string, entry: unknown): 'local' | Reached | undefined => {
+  if (entry === null || typeof entry !== 'object') {
+    return undefined
+  }
+  const fields = entry as Record<string, unknown>
+  if (typeof fields.url === 'string' && fields.url !== '') {
+    const host = hostOfUrl(fields.url).replace(/:\d+$/, '')
+    const scope = scopeOf(host)
+    return scope === 'local' ? 'local' : { host: host.toLowerCase() || name, scope }
+  }
+  return typeof fields.command === 'string' ? 'local' : undefined
+}
+// The servers already looked for, so a server in no settings file is read for only once.
+const mcpLooked = new Set<string>()
+const readJson = async ($: Engine, path: string): Promise<Record<string, unknown> | null> => {
+  try {
+    const parsed: unknown = JSON.parse(await $.fs.read(path))
+    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+const loadMcpPlaces = async ($: Engine) => {
+  const home = (await $.env.get('USERPROFILE').catch(() => undefined)) ?? (await $.env.get('HOME').catch(() => undefined))
+  const configDir = await $.env.get('CLAUDE_CONFIG_DIR').catch(() => undefined)
+  const appData = await $.env.get('APPDATA').catch(() => undefined)
+  const root = await $.session.root().catch(() => '')
+  const same = (a: string, b: string) => a.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase() === b.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase()
+  const servers: Record<string, unknown>[] = []
+  const take = (value: unknown) => {
+    if (value !== null && typeof value === 'object') {
+      servers.push(value as Record<string, unknown>)
+    }
+  }
+  // User and local (per-project) servers, as `claude mcp add` writes them.
+  for (const file of [configDir && `${configDir}/.claude.json`, home && `${home}/.claude.json`]) {
+    if (!file) continue
+    const json = await readJson($, file)
+    if (json === null) continue
+    take(json.mcpServers)
+    const projects = json.projects
+    if (projects !== null && typeof projects === 'object' && root !== '') {
+      for (const [path, project] of Object.entries(projects as Record<string, unknown>)) {
+        if (same(path, root) && project !== null && typeof project === 'object') {
+          take((project as Record<string, unknown>).mcpServers)
+        }
+      }
+    }
+  }
+  // The project's shared servers, and the desktop app's own.
+  if (root !== '') take((await readJson($, `${root}/.mcp.json`))?.mcpServers)
+  if (appData) take((await readJson($, `${appData}/Claude/claude_desktop_config.json`))?.mcpServers)
+  for (const group of servers) {
+    for (const [name, entry] of Object.entries(group)) {
+      const place = mcpPlaceOf(name, entry)
+      if (place !== undefined) {
+        MCP_PLACES.set(mcpKey(name), place)
+      }
+    }
+  }
+}
+// Before an MCP call is counted: a server not known yet has the settings read again, once.
+const learnMcpServer = async ($: Engine, tool: string) => {
+  const parts = tool.split('__')
+  if (parts.length !== 3 || parts[0] !== 'mcp') return
+  const key = mcpKey(parts[1] ?? '')
+  if (MCP_PLACES.has(key) || mcpLooked.has(key)) return
+  mcpLooked.add(key)
+  await loadMcpPlaces($).catch(() => undefined)
+}
+
 // The places outside this PC a tool call reaches: hosts it names, or the network at large.
 const XML_NAMESPACE = /^https?:\/\/(www\.w3\.org\/(1999|2000|XML|2005)\/|schemas\.(openxmlformats\.org|microsoft\.com)\/|purl\.org\/dc\/)/i
 
@@ -1139,9 +1596,19 @@ const reachOf = (tool: string, input: unknown): Reached[] => {
       }
       return out
     }
-    if (!LOCAL_MCP.test(server)) {
-      return [{ host: /^[0-9a-f]{8}-/i.test(server) ? 'claude.ai connector' : server, scope: 'web' }]
+    if (LOCAL_MCP.test(server)) {
+      return out
     }
+    // A claude.ai connector (named by an id, or claude_ai_…) runs on Anthropic's side.
+    if (/^[0-9a-f]{8}-/i.test(server) || /^claude_ai_/i.test(server)) {
+      return [{ host: 'claude.ai connector', scope: 'web' }]
+    }
+    // Otherwise as the MCP settings set it up: a command on this PC, or a URL.
+    const place = MCP_PLACES.get(mcpKey(server))
+    if (place === 'local') {
+      return out
+    }
+    return [place ?? { host: server, scope: 'net' }]
   }
   return out
 }
@@ -1170,7 +1637,10 @@ const GOLDEN_ANGLE = 2.39996
 // How much a click on a file or a folder enlarges the files graph.
 const FILE_ZOOM = 2.6
 const FOLDER_ZOOM = 2
-const FOLDER_YELLOW = '#e3b341'
+let FOLDER_YELLOW = '#e3b341'
+// The graph's file names and the halo behind its labels (set by paintFor with the look).
+let LABEL_TEXT = '#eafaff'
+let LABEL_HALO = '#05090f'
 const xml = (text: string) =>
   text.replace(/[&<>"]/g, c => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&quot;'))
 const touchColor = (f: FileTouch) => (f.write > 0 ? GREEN : f.edit > 0 ? AMBER : CYAN)
@@ -1341,8 +1811,8 @@ ${zooms}
 svg:has(.scene :focus) .rs{opacity:.9}
 .sp{stroke:${CYAN};stroke-opacity:.22;stroke-width:${n1(1.2 * k)}}
 .lk{stroke:#9fd4e3;stroke-width:${n1(1.2 * k)}}
-.fl{font:bold ${n1(14 * k)}px monospace;fill:${FOLDER_YELLOW};paint-order:stroke;stroke:#05090f;stroke-width:${n1(4 * k)}px}
-.fn{font:${n1(15 * k)}px monospace;fill:#eafaff;paint-order:stroke;stroke:#05090f;stroke-width:${n1(4 * k)}px}
+.fl{font:bold ${n1(14 * k)}px monospace;fill:${FOLDER_YELLOW};paint-order:stroke;stroke:${LABEL_HALO};stroke-width:${n1(4 * k)}px}
+.fn{font:${n1(15 * k)}px monospace;fill:${LABEL_TEXT};paint-order:stroke;stroke:${LABEL_HALO};stroke-width:${n1(4 * k)}px}
 .pl{fill:none;stroke-width:2;transform-box:fill-box;transform-origin:center;animation:pl 1.8s ease-out infinite}
 @keyframes pl{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(3.2)}}
 .live{animation:live 1.2s ease-in-out infinite}
@@ -1548,7 +2018,8 @@ const activityOf = (tool: string, input: unknown): Activity | null => {
     tool === 'WebFetch' ||
     tool === 'WebSearch' ||
     /^mcp__(Claude_Browser|claude-in-chrome)__/.test(tool) ||
-    reachOf(tool, input).length > 0
+    // An MCP server of unknown kind is not counted as web for the colour.
+    reachOf(tool, input).some(place => place.scope !== 'net' || !tool.startsWith('mcp__'))
   ) {
     return 'web'
   }
@@ -1881,6 +2352,7 @@ const diagnose = async ($: Engine): Promise<string> => {
     `surfaces: ${JSON.stringify(surfaces)}`,
     `readout: ${JSON.stringify(r)}`,
     `colors problems: ${problems.filter(p => p.startsWith("Desktop won't paint")).length}`,
+    `paper colors problems: ${paperProblems.filter(p => p.startsWith("Desktop won't paint")).length}`,
     `renders seen: ${JSON.stringify(seen)}`,
     `start: ${startLog.join('; ')}`,
   ]
@@ -2039,7 +2511,7 @@ const revealFile = async ($: Engine, path: string, how: 'select' | 'open' = 'sel
 }
 
 // The version shown in the dashboard; build.ps1 checks it matches .claude-plugin/plugin.json.
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 // Where the project lives on GitHub (shown in the help's credits).
 const REPO_URL = 'https://github.com/leoplusma/ops-deck'
 
@@ -3242,6 +3714,8 @@ export const register: Register = on => {
     // A helper agent being started gets a row of its own in the dashboard.
     const startsAgent = AGENT_TOOLS.has(e.tool) ? await agentLaunched($, e) : undefined
     const startedCall = await $.clock.now()
+    // An MCP server not seen yet: read the settings that say how it is reached.
+    await learnMcpServer($, e.tool)
     // The background shows what this call is doing while it runs.
     const kind = activityOf(e.tool, e)
     if (kind !== null) {
@@ -3375,6 +3849,14 @@ export const register: Register = on => {
             ? 'An oscilloscope: glowing waves sliding across a faint grid, with dots fading in and out'
             : name === 'code-rain'
             ? 'Streams of Japanese characters and code falling down a dark blue screen'
+            : name === 'ink-plotter'
+            ? 'Contour lines drifting across cream paper, with a pen inking one of them'
+            : name === 'halftone-tide'
+            ? 'A newspaper dot screen on cream paper, with a wave of bigger dots sliding across'
+            : name === 'digital-cream'
+            ? 'Soft cream ribbons edged with fine gold lines drifting across warm ivory'
+            : name === 'heartline'
+            ? 'A warm studio backdrop with a heart monitor trace sweeping along where the wall meets the floor'
             :'A grid floor rolling toward a glowing horizon under stars'
     const alt =
       mode === 'alert'
@@ -3383,7 +3865,9 @@ export const register: Register = on => {
           ? what
           : mode === 'idle'
             ? `${what}, fading out`
-            : 'A dark, still background'
+            : SCENE_LOOK[name] === 'light'
+              ? 'A plain cream background'
+              : 'A dark, still background'
 
     return <Svg key={key} source={shownSource} alt={alt} isInteractive />
   })
@@ -3391,6 +3875,7 @@ export const register: Register = on => {
   // The status band above the prompt: always on.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     saw(`AbovePrompt/${e.surface}`)
+    await paintFor($)
     const [stored, fault, working, workDone, panelOpen, reached, done, lang] = await Promise.all([
       read($, readout),
       read($, alert),
@@ -3487,6 +3972,7 @@ export const register: Register = on => {
     }
     const isDemo = e.requestId === DEMO_PANE
     saw(`Pane/${e.surface}/${e.props.placement}`)
+    await paintFor($)
     const table = $.ui.resolve(e)
     const live = await Promise.all([
       read($, readout),
@@ -3634,7 +4120,7 @@ export const register: Register = on => {
             key="scene"
             label={t.scene}
             value={backgroundOn ? scene : 'none'}
-            options={[{ value: 'none', label: t.none }, ...SCENE_NAMES.map(name => ({ value: name, label: sceneTitle(name) }))]}
+            options={[{ value: 'none', label: t.none }, ...SCENE_NAMES.map(name => ({ value: name, label: SCENE_LOOK[name] === 'light' ? `${sceneTitle(name)} ☀` : sceneTitle(name) }))]}
             onSelect={value => {
               if (value === 'none') {
                 void setBackground($, false)
@@ -4004,6 +4490,7 @@ export const register: Register = on => {
   // The help, in a pane of its own (opened by the dashboard's Help button), so reading it
   // never changes the dashboard's own height or scroll.
   on('ui.render', { component: 'Pane', requestId: HELP_PANE }, async ($, e) => {
+    await paintFor($)
     const t = textsFor(await read($, language))
     const { Box, Text, Button } = directed($.ui.resolve(e), t.dir)
     const heading = (text: string) => (
@@ -4041,10 +4528,10 @@ export const register: Register = on => {
         </Box>
         <Box flexDirection="column">
           {heading(t.hColour)}
-          {helpLine('think', '■', ACTIVITY_COLOR.think, t.hThink)}
-          {helpLine('files', '■', ACTIVITY_COLOR.files, t.hFiles)}
-          {helpLine('run', '■', ACTIVITY_COLOR.run, t.hRun)}
-          {helpLine('web', '■', ACTIVITY_COLOR.web, t.hWeb)}
+          {helpLine('think', '■', ACTIVITY_SHOWN.think, t.hThink)}
+          {helpLine('files', '■', ACTIVITY_SHOWN.files, t.hFiles)}
+          {helpLine('run', '■', ACTIVITY_SHOWN.run, t.hRun)}
+          {helpLine('web', '■', ACTIVITY_SHOWN.web, t.hWeb)}
           {helpLine('alert', '■', RED, t.hAlert)}
         </Box>
         <Box flexDirection="column">

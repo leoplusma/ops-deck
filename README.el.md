@@ -17,7 +17,7 @@
 
 ## Τι κάνει
 
-- **Πέντε κινούμενα φόντα** (circuit, horizon, data room, code rain, signal). Ένα χρώμα δείχνει τι κάνει ο Claude: **μωβ** σκέφτεται, **πορτοκαλί** αρχεία, **πράσινο** εντολές, **ματζέντα** web. Όλα γίνονται **κόκκινα** όταν αποτύχει ένα εργαλείο.
+- **Εννέα κινούμενα φόντα**: πέντε σκούρα (circuit, horizon, data room, code rain, signal) και τέσσερα ανοιχτά (ink plotter, halftone tide, digital cream, heartline). Μια ανοιχτή σκηνή κάνει ανοιχτόχρωμα και την εφαρμογή, την μπάρα και τον πίνακα. Ένα χρώμα δείχνει τι κάνει ο Claude: **μωβ** σκέφτεται, **πορτοκαλί** αρχεία, **πράσινο** εντολές, **ματζέντα** web. Όλα γίνονται **κόκκινα** όταν αποτύχει ένα εργαλείο.
 - **Μπάρα κατάστασης** πάνω από το prompt: context, χρήση πλάνου 5 ωρών και εβδομάδας, χρόνος, κλήσεις εργαλείων, εκτίμηση κόστους.
 - **Πίνακας συνεδρίας**: τι βγήκε από τον υπολογιστή σας, γράφημα αρχείων, εργαλεία, βοηθοί (subagents), πρόσφατοι γύροι, βοήθεια και καρτέλα demo.
 - **Δέκα γλώσσες.** Όλα τρέχουν τοπικά: το ops-deck δεν στέλνει τίποτα πουθενά.
@@ -25,8 +25,6 @@
 ## Απαιτήσεις
 
 Πρόσφατη εφαρμογή Claude για υπολογιστή (δοκιμασμένο με Claude Code 2.1.325 σε Windows 11).
-
-**Φτιαγμένο για σκούρο θέμα.** Στο ανοιχτό θέμα της εφαρμογής δεν δείχνει ακόμη σωστά· η υποστήριξη ανοιχτού θέματος ίσως έρθει σύντομα.
 
 Πρέπει να υπάρχει εγκατεστημένο το **Git** (το Claude το χρησιμοποιεί για να κατεβάσει το plugin). Σε Windows: [Git for Windows](https://git-scm.com/download/win), με τις προεπιλεγμένες ρυθμίσεις.
 
@@ -65,6 +63,12 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```powershell
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
+
+## Κάτι δεν δουλεύει;
+
+Γράψτε `/hud-debug` σε μια συνεδρία ή ζητήστε από το Claude *"ops-deck debug"*. Θα πάρετε μια σύντομη αναφορά: τι έχει αποθηκεύσει το ops-deck (φόντο, σκηνή, πίνακας), τι σχεδίασε τελευταίο και πώς πήγε η εκκίνηση. Η ίδια αναφορά γράφεται και στο `debug.txt` στον φάκελο του plugin.
+
+Για να αναφέρετε ένα πρόβλημα, [ανοίξτε ένα issue](https://github.com/leoplusma/ops-deck/issues) και επικολλήστε την αναφορά. Ρίξτε της πρώτα μια ματιά: περιέχει το μοντέλο και τη χρήση της συνεδρίας και ίσως τον φάκελό της.
 
 ## Απενεργοποίηση ή αφαίρεση
 

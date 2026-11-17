@@ -87,6 +87,36 @@ test('the band counts the places reached outside this PC, and warns on a full co
   await ui.unmount()
 })
 
+test('an MCP server started as a command counts as this PC; one at a remote URL as web', async ($, on) => {
+  on('clock.now', () => ({ value: 1794700000000 }))
+  on('ui.toast', () => ({ value: undefined }))
+  on('tool.call', () => ({ result: {} }))
+  on('env.get', ($, e) => ({ value: e.name === 'USERPROFILE' ? 'C:/Users/someone' : undefined }))
+  on('session.root', () => ({ value: 'C:/work/app' }))
+  // The user's settings: a local server and a remote one; nothing else exists.
+  on('fs.read', ($, e) => {
+    // The engine hands paths over with backslashes.
+    if (String(e.path).split('\\').join('/') === 'C:/Users/someone/.claude.json') {
+      return {
+        value: JSON.stringify({
+          mcpServers: { s1mcp: { command: 'node', args: ['server.js'] }, tickets: { type: 'http', url: 'https://mcp.example.com/sse' } },
+        }),
+      }
+    }
+    throw new Error('missing')
+  })
+
+  await $.tool.call({ tool: 'mcp__s1mcp__run_select', sql: 'SELECT 1' })
+  let ui = await $.ui.mount(BAND)
+  expect(await ui.find({ type: 'Text', text: /LOCAL/ })).toBeDefined()
+  await ui.unmount()
+
+  await $.tool.call({ tool: 'mcp__tickets__list' })
+  ui = await $.ui.mount(BAND)
+  expect(await ui.find({ type: 'Text', text: /🌐 1/ })).toBeDefined()
+  await ui.unmount()
+})
+
 test('the band shows the total time worked this session', async ($, on) => {
   on('clock.now', () => ({ value: 1794700000000 }))
   // An hour, two minutes and five seconds already worked in earlier turns.

@@ -17,7 +17,7 @@
 
 ## できること
 
-- **5 つのアニメーション背景**（circuit、horizon、data room、code rain、signal）。色で Claude の状態がわかります：**紫** は思考中、**琥珀色** はファイル、**緑** はコマンド、**マゼンタ** は Web。ツールが失敗するとすべて **赤** になります。
+- **9 つのアニメーション背景**：ダーク 5 つ (circuit, horizon, data room, code rain, signal) とライト 4 つ (ink plotter, halftone tide, digital cream, heartline)。ライトのシーンを選ぶと、アプリ、ステータスバー、ダッシュボードも明るい色になります。色で Claude の状態がわかります：**紫** は思考中、**琥珀色** はファイル、**緑** はコマンド、**マゼンタ** は Web。ツールが失敗するとすべて **赤** になります。
 - プロンプト上部の **ステータスバンド**：コンテキスト、5 時間枠と週間のプラン使用量、作業時間、ツール呼び出し、推定コスト。
 - **セッションダッシュボード**：PC の外に出たもの、ファイルグラフ、ツール、サブエージェント、最近のターン、ヘルプ、デモタブ。
 - **10 言語に対応。** すべて PC 内で動作し、ops-deck はどこにも何も送信しません。
@@ -25,8 +25,6 @@
 ## 必要なもの
 
 最新の Claude デスクトップアプリ（Windows 11 上の Claude Code 2.1.325 で確認済み）。
-
-**ダークモード向けです。**アプリのライトモードではまだ正しく表示されません。ライトモード対応は近いうちに追加されるかもしれません。
 
 **Git** がインストールされている必要があります（Claude がプラグインのダウンロードに使います）。Windows では [Git for Windows](https://git-scm.com/download/win) を既定の設定でインストールしてください。
 
@@ -65,6 +63,12 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```powershell
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
+
+## うまく動かないときは
+
+セッションで `/hud-debug` と入力するか、Claude に *"ops-deck debug"* と頼みます。短いレポートが出ます：ops-deck が保存した内容（背景、シーン、ダッシュボード）、最後に描いたもの、起動の様子。同じレポートはプラグインのフォルダーの `debug.txt` にも書き込まれます。
+
+問題を報告するには、[issue を作成](https://github.com/leoplusma/ops-deck/issues)してレポートを貼り付けてください。先に内容を確認してください：セッションのモデルと使用量、場合によってはフォルダーが含まれます。
 
 ## オフにする・削除する
 

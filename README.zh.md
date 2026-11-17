@@ -17,7 +17,7 @@
 
 ## 功能
 
-- **五个动画背景**（circuit、horizon、data room、code rain、signal）。一种颜色显示 Claude 正在做什么：**紫色** 思考，**琥珀色** 处理文件，**绿色** 运行命令，**品红色** 访问网络。工具失败时整个画面变为 **红色**。
+- **九个动画背景**：五个深色 (circuit, horizon, data room, code rain, signal) 和四个浅色 (ink plotter, halftone tide, digital cream, heartline)。选择浅色场景时，应用、状态栏和仪表板也会切换为浅色。一种颜色显示 Claude 正在做什么：**紫色** 思考，**琥珀色** 处理文件，**绿色** 运行命令，**品红色** 访问网络。工具失败时整个画面变为 **红色**。
 - 输入框上方的 **状态条**：上下文、5 小时与每周套餐用量、时间、工具调用次数、估算费用。
 - **会话仪表板**：离开电脑的内容、文件图、工具、子代理、最近的轮次、帮助和演示标签页。
 - **十种语言。** 一切都在本机运行：ops-deck 不会向任何地方发送数据。
@@ -25,8 +25,6 @@
 ## 要求
 
 较新版本的 Claude 桌面应用（已在 Windows 11 上用 Claude Code 2.1.325 测试）。
-
-**为深色模式设计。**在应用的浅色模式下暂时显示不佳；浅色模式支持可能很快推出。
 
 需要安装 **Git**（Claude 用它来下载插件）。Windows 上请安装 [Git for Windows](https://git-scm.com/download/win)，使用默认选项即可。
 
@@ -65,6 +63,12 @@ Install the plugin ops-deck from the GitHub marketplace leoplusma/ops-deck for m
 ```powershell
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
+
+## 遇到问题？
+
+在会话中输入 `/hud-debug`，或让 Claude 执行 *"ops-deck debug"*。你会得到一份简短报告：ops-deck 保存了什么（背景、场景、仪表板）、最后绘制了什么，以及启动情况。同样的报告也会写入插件文件夹中的 `debug.txt`。
+
+要报告问题，请[提交 issue](https://github.com/leoplusma/ops-deck/issues) 并粘贴报告。请先检查一遍：其中包含会话的模型和用量，可能还有它的文件夹。
 
 ## 关闭或卸载
 

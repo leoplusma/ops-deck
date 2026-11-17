@@ -17,7 +17,7 @@
 
 ## O que faz
 
-- **Cinco fundos animados** (circuit, horizon, data room, code rain, signal). Uma cor mostra o que o Claude faz: **violeta** pensando, **âmbar** arquivos, **verde** comandos, **magenta** web. Tudo fica **vermelho** quando uma ferramenta falha.
+- **Nove fundos animados**: cinco escuros (circuit, horizon, data room, code rain, signal) e quatro claros (ink plotter, halftone tide, digital cream, heartline). Uma cena clara também deixa o app, a faixa e o painel em cores claras. Uma cor mostra o que o Claude faz: **violeta** pensando, **âmbar** arquivos, **verde** comandos, **magenta** web. Tudo fica **vermelho** quando uma ferramenta falha.
 - **Faixa de status** acima do prompt: contexto, uso do plano (5 horas e semana), tempo, chamadas de ferramentas, custo estimado.
 - **Painel de sessão**: o que saiu do seu PC, gráfico de arquivos, ferramentas, subagentes, rodadas recentes, ajuda e uma aba de demonstração.
 - **Dez idiomas.** Tudo fica no seu PC: o ops-deck não envia nada para lugar nenhum.
@@ -25,8 +25,6 @@
 ## Requisitos
 
 Uma versão recente do app de desktop do Claude (testado com Claude Code 2.1.325 no Windows 11).
-
-**Feito para o modo escuro.** No modo claro do app ainda não fica bom; o suporte ao modo claro pode chegar em breve.
 
 É preciso ter o **Git** instalado (o Claude usa para baixar o plugin). No Windows: [Git for Windows](https://git-scm.com/download/win), com as opções padrão.
 
@@ -65,6 +63,12 @@ Ou crie um atalho **Claude (VM)** na área de trabalho que sempre o abra assim (
 ```powershell
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
+
+## Algo não funciona?
+
+Digite `/hud-debug` numa sessão ou peça ao Claude *"ops-deck debug"*. Você recebe um relatório curto: o que o ops-deck salvou (fundo, cena, painel), o que desenhou por último e como foi a inicialização. O mesmo relatório também é gravado em `debug.txt`, na pasta do plugin.
+
+Para relatar um problema, [abra uma issue](https://github.com/leoplusma/ops-deck/issues) e cole o relatório. Confira antes: ele inclui o modelo e o uso da sessão, e talvez a pasta dela.
 
 ## Desativar ou remover
 

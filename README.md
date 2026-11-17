@@ -19,9 +19,10 @@
 
 ## What it does
 
-- **Five animated backgrounds** (circuit, horizon, data room, code rain, signal) that fade in while Claude works and fade out when it's done. One colour tells you what Claude is doing right now: **violet** thinking, **amber** working with files, **green** running commands, **magenta** reaching the web. Everything turns **red** when a tool fails.
+- **Nine animated backgrounds** that fade in while Claude works and fade out when it's done: five dark (circuit, horizon, data room, code rain, signal) and four light (ink plotter, halftone tide, digital cream, heartline). A light scene also switches the app, the band and the dashboard to light colours. One colour tells you what Claude is doing right now: **violet** thinking, **amber** working with files, **green** running commands, **magenta** reaching the web. Everything turns **red** when a tool fails.
 - **A status band above the prompt**: working or idle, context used, 5-hour and weekly plan usage, time worked, tool calls and an API cost estimate. It flashes green on a clean finish and turns red on a failure.
 - **A session dashboard** in the side pane:
+  - **The session folder**, with a 📂 button that opens it.
   - **What left this PC**: every web or network place a tool call reached, with the exact command, and the tries a hook blocked.
   - **Files touched**: a graph grouped by folder (click to zoom) and a list with how often each file was read, edited or written.
   - **Tools used**: calls per tool, failures, and the whole last command with a Copy button.
@@ -34,8 +35,6 @@ Everything runs on your PC. ops-deck sends nothing anywhere; it only shows what 
 ## Requirements
 
 A recent Claude desktop app (tested with Claude Code 2.1.325 on Windows 11). Older versions without mod support won't load it. The moving backgrounds and graphs need the desktop app; in a terminal you get the band and a text dashboard. The Explorer, Copy and session-name features use PowerShell, so they need Windows.
-
-**Made for dark mode.** It doesn't look right in the app's light mode yet; light mode support may come soon.
 
 **Git** must be installed (Claude uses it to download the plugin). On Windows: [Git for Windows](https://git-scm.com/download/win), default options.
 
@@ -77,10 +76,16 @@ Or make a **Claude (VM)** shortcut on the desktop that always starts it that way
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
 
+## Something not working?
+
+Type `/hud-debug` in a session, or ask Claude *"ops-deck debug"*. You get a short report of what ops-deck has saved (background, scene, dashboard), what it last drew and how its start-up went. The same report is also written to `debug.txt` in the plugin's folder at start-up.
+
+To report a problem, [open an issue](https://github.com/leoplusma/ops-deck/issues) and paste the report. Look it over first: it includes your session's model and usage, and may include its folder.
+
 ## Use
 
 - Pick a **scene** and a **language** at the top of the dashboard. **Help** explains every colour and mark.
-- Or ask Claude: *"open the ops-deck dashboard"*, *"close the ops-deck dashboard"*, *"ops-deck scene signal"*, *"ops-deck background off"*, *"open the ops-deck demo"*.
+- Or ask Claude: *"open the ops-deck dashboard"*, *"close the ops-deck dashboard"*, *"ops-deck scene signal"*, *"ops-deck scene digital cream"*, *"ops-deck background off"*, *"open the ops-deck demo"*.
 
 ## Turn it off or remove it
 
@@ -94,6 +99,8 @@ Then open a new session or type `/reload-plugins`.
 
 ## Scenes
 
+### Dark
+
 | | Working | Error |
 |---|---|---|
 | **circuit** | ![](assets/scenes/circuit-working.jpg) | ![](assets/scenes/circuit-error.jpg) |
@@ -102,15 +109,28 @@ Then open a new session or type `/reload-plugins`.
 | **code rain** | ![](assets/scenes/code-rain-working.jpg) | ![](assets/scenes/code-rain-error.jpg) |
 | **signal** | ![](assets/scenes/signal-working.jpg) | ![](assets/scenes/signal-error.jpg) |
 
+### Light
+
+| | Working | Error |
+|---|---|---|
+| **ink plotter** | ![](assets/scenes/ink-plotter-working.jpg) | ![](assets/scenes/ink-plotter-error.jpg) |
+| **halftone tide** | ![](assets/scenes/halftone-tide-working.jpg) | ![](assets/scenes/halftone-tide-error.jpg) |
+| **digital cream** | ![](assets/scenes/digital-cream-working.jpg) | ![](assets/scenes/digital-cream-error.jpg) |
+| **heartline** | ![](assets/scenes/heartline-working.jpg) | ![](assets/scenes/heartline-error.jpg) |
+
 ## The dashboard
 
-All four pictures are from the demo tab, with a made-up session.
+All pictures are from the demo tab, with a made-up session.
 
 | Overview | Files |
 |---|---|
 | ![](assets/dashboard-overview.png) | ![](assets/dashboard-files.png) |
 | **Network and tools** | **Subagents and recent turns** |
 | ![](assets/dashboard-tools.png) | ![](assets/dashboard-subagents.png) |
+
+With a light scene (digital cream), the dashboard turns light too:
+
+<p align="center"><img src="assets/dashboard-light.png" alt="The dashboard with a light scene" width="420"></p>
 
 ## Credits
 

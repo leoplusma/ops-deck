@@ -17,7 +17,7 @@
 
 ## Was es kann
 
-- **Fünf animierte Hintergründe** (circuit, horizon, data room, code rain, signal). Eine Farbe zeigt, was Claude tut: **Violett** denkt, **Bernstein** Dateien, **Grün** Befehle, **Magenta** Web. Alles wird **rot**, wenn ein Werkzeug fehlschlägt.
+- **Neun animierte Hintergründe**: fünf dunkle (circuit, horizon, data room, code rain, signal) und vier helle (ink plotter, halftone tide, digital cream, heartline). Eine helle Szene schaltet auch die App, die Leiste und das Dashboard auf helle Farben. Eine Farbe zeigt, was Claude tut: **Violett** denkt, **Bernstein** Dateien, **Grün** Befehle, **Magenta** Web. Alles wird **rot**, wenn ein Werkzeug fehlschlägt.
 - **Statusleiste** über dem Prompt: Kontext, Plan-Nutzung (5 Stunden und Woche), Zeit, Werkzeugaufrufe, Kostenschätzung.
 - **Sitzungs-Dashboard**: was deinen PC verlassen hat, Datei-Graph, Werkzeuge, Subagenten, letzte Runden, Hilfe und ein Demo-Tab.
 - **Zehn Sprachen.** Alles läuft lokal: ops-deck sendet nichts irgendwohin.
@@ -25,8 +25,6 @@
 ## Voraussetzungen
 
 Eine aktuelle Claude-Desktop-App (getestet mit Claude Code 2.1.325 unter Windows 11).
-
-**Für den dunklen Modus gemacht.** Im hellen Modus der App sieht es noch nicht richtig aus; Unterstützung für den hellen Modus kommt vielleicht bald.
 
 **Git** muss installiert sein (Claude lädt das Plugin damit herunter). Unter Windows: [Git for Windows](https://git-scm.com/download/win), mit den Standardoptionen.
 
@@ -65,6 +63,12 @@ Oder legen Sie eine Desktop-Verknüpfung **Claude (VM)** an, die es immer so sta
 ```powershell
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Claude (VM).lnk"); $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"; $s.Arguments = '-NoProfile -WindowStyle Hidden -Command "& (Join-Path (Get-AppxPackage -Name Claude).InstallLocation ''app\Claude.exe'') --ignore-gpu-blocklist"'; $s.WindowStyle = 7; $s.IconLocation = (Join-Path (Get-AppxPackage -Name Claude).InstallLocation 'app\Claude.exe'); $s.Save()
 ```
+
+## Funktioniert etwas nicht?
+
+Geben Sie `/hud-debug` in einer Sitzung ein oder bitten Sie Claude um *"ops-deck debug"*. Sie erhalten einen kurzen Bericht: was ops-deck gespeichert hat (Hintergrund, Szene, Dashboard), was es zuletzt gezeichnet hat und wie der Start lief. Derselbe Bericht steht auch in `debug.txt` im Ordner des Plugins.
+
+Um ein Problem zu melden, [öffnen Sie ein Issue](https://github.com/leoplusma/ops-deck/issues) und fügen Sie den Bericht ein. Sehen Sie ihn vorher durch: Er enthält Modell und Nutzung der Sitzung und eventuell ihren Ordner.
 
 ## Ausschalten oder entfernen
 

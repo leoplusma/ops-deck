@@ -12,6 +12,7 @@
 
 ![ops-deck](assets/hero-code-rain.webp)
 ![ops-deck](assets/hero-horizon-alert.webp)
+![ops-deck](assets/hero-digital-cream.webp)
 
 > **Ein Hobbyprojekt, aus Spaß gemacht.** Nutze es so, wie es ist: keine Garantie, dass es überall funktioniert, und kein Support-Versprechen. Trotzdem beantworte ich gern jede freundliche Nachricht und bin immer offen dafür, Dinge zu ändern, zu ergänzen oder zu reparieren. [Öffne ein Issue](https://github.com/leoplusma/ops-deck/issues) und sag Hallo.
 

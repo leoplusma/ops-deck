@@ -14,6 +14,7 @@
 
 ![ops-deck](assets/hero-code-rain.webp)
 ![ops-deck](assets/hero-horizon-alert.webp)
+![ops-deck](assets/hero-digital-cream.webp)
 
 > **مشروع هواية صُنع للمتعة.** استخدمه كما هو: لا يوجد ضمان أنه يعمل في كل مكان ولا وعد بالدعم. ومع ذلك، سأرد بكل سرور على كل رسالة ودية، وأنا منفتح دائمًا على تغيير الأشياء أو إضافتها أو إصلاحها. [افتح issue](https://github.com/leoplusma/ops-deck/issues) لتلقي التحية.
 

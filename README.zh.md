@@ -12,6 +12,7 @@
 
 ![ops-deck](assets/hero-code-rain.webp)
 ![ops-deck](assets/hero-horizon-alert.webp)
+![ops-deck](assets/hero-digital-cream.webp)
 
 > **一个为了好玩而做的业余项目。** 请按原样使用：不保证在所有环境都能运行，也不承诺提供支持。不过，我很乐意回复每一条友好的消息，也随时愿意修改、添加或修复功能。 [提交一个 issue](https://github.com/leoplusma/ops-deck/issues) 来打个招呼。
 

@@ -14,6 +14,7 @@
 
 ![ops-deck while Claude works: the code rain scene](assets/hero-code-rain.webp)
 ![ops-deck after a failed command: the horizon scene turns red](assets/hero-horizon-alert.webp)
+![ops-deck with a light scene: digital cream](assets/hero-digital-cream.webp)
 
 > **A hobby project made for fun.** Use it as it is: there's no guarantee it works everywhere and no promise of support. That said, I'll gladly answer every friendly message, and I'm always open to changing, adding or fixing things. [Open an issue](https://github.com/leoplusma/ops-deck/issues) to say hello.
 

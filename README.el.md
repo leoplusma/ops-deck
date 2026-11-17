@@ -12,6 +12,7 @@
 
 ![ops-deck](assets/hero-code-rain.webp)
 ![ops-deck](assets/hero-horizon-alert.webp)
+![ops-deck](assets/hero-digital-cream.webp)
 
 > **Ένα χομπι-project, φτιαγμένο για πλάκα.** Χρησιμοποιήστε το όπως είναι: δεν υπάρχει εγγύηση ότι δουλεύει παντού ούτε δέσμευση για υποστήριξη. Παρ' όλα αυτά, θα απαντήσω με χαρά σε κάθε φιλικό μήνυμα και είμαι πάντα ανοιχτός να αλλάξω, να προσθέσω ή να διορθώσω πράγματα. [Ανοίξτε ένα issue](https://github.com/leoplusma/ops-deck/issues) για να πείτε ένα γεια.
 

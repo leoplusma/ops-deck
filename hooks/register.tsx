@@ -69,6 +69,8 @@ const activity = atom({ plugin: 'ops-deck', key: 'activity' } as const, 'think')
 const agents = atom({ plugin: 'ops-deck', key: 'agents' } as const, [] as AgentRun[], { shape: 'agents-1' })
 // The language of the dashboard and the band (en, el, de, fr, es or it), mirroring the saved choice.
 const language = atom({ plugin: 'ops-deck', key: 'language' } as const, 'en')
+// The desktop app's own light or dark setting, followed while the background is off.
+const appLook = atom({ plugin: 'ops-deck', key: 'appLook' } as const, 'dark')
 
 // steady: working, drawn at once with no fade-in (after an alert, so blue comes back without a dip).
 type Mode = 'idle' | 'busy' | 'steady' | 'alert' | 'rest'
@@ -1200,12 +1202,38 @@ const REST_HEART = heartlineScene('rest', 'think')
 const REST = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><rect width="1600" height="1000" fill="#03061a"/></svg>'
 // The named backgrounds. To add one: write a function drawing it for each mode, add its
 // name to SceneName and SCENE_NAMES, its drawings to SCENES and its look to SCENE_LOOK.
-type SceneName = 'circuit' | 'horizon' | 'data-room' | 'code-rain' | 'signal' | 'ink-plotter' | 'halftone-tide' | 'digital-cream' | 'heartline'
-const SCENE_NAMES: readonly SceneName[] = ['circuit', 'horizon', 'data-room', 'code-rain', 'signal', 'ink-plotter', 'halftone-tide', 'digital-cream', 'heartline']
-// Whether a scene is dark (neon on black) or light (ink on cream paper). The app, the band
-// and the dashboard take the same look as the scene; with the background off, dark.
+type SceneName =
+  | 'spotlight'
+  | 'circuit'
+  | 'horizon'
+  | 'data-room'
+  | 'code-rain'
+  | 'signal'
+  | 'ink-plotter'
+  | 'halftone-tide'
+  | 'digital-cream'
+  | 'heartline'
+const SCENE_NAMES: readonly SceneName[] = [
+  'spotlight',
+  'circuit',
+  'horizon',
+  'data-room',
+  'code-rain',
+  'signal',
+  'ink-plotter',
+  'halftone-tide',
+  'digital-cream',
+  'heartline',
+]
+// Whether a scene is dark (neon on black), light (ink on cream paper), or follows the app's
+// own setting (auto: spotlight, like no background). The app, the band and the dashboard
+// take the same look as the scene.
 type Look = 'dark' | 'light'
-const SCENE_LOOK: Record<SceneName, Look> = {
+type SceneLook = Look | 'auto'
+// How the Scene list marks each look: ◐ follows the app.
+const LOOK_MARK: Record<SceneLook, string> = { light: '☀', dark: '☾', auto: '◐' }
+const SCENE_LOOK: Record<SceneName, SceneLook> = {
+  spotlight: 'auto',
   circuit: 'dark',
   horizon: 'dark',
   'data-room': 'dark',
@@ -1242,7 +1270,27 @@ const drawAll = (draw: (mode: Mode, act: Activity) => string, rest = REST): Scen
 const REST_PAPER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><rect width="1600" height="1000" fill="${PAPER}"/></svg>`
 const sceneFrame = (frames: SceneFrames, mode: Mode, act: Activity) =>
   mode === 'busy' || mode === 'steady' ? frames[mode][act] : frames[mode]
+// Scene "spotlight": a still studio backdrop, one soft light in the middle fading to the
+// edges over a slightly lighter floor. Nothing moves and nothing marks an alert (the band
+// does); it is ivory or blue-black as the app's own light or dark setting is.
+const spotlightOf = (look: Look) => {
+  const [c0, c1, c2, c3, f0, f1, f2] =
+    look === 'light'
+      ? ['#f7f1e4', '#ece2cd', '#ddcfb2', '#cdbc9a', '#e2d6bd', '#e7dcc6', '#ede4d2']
+      : ['#2a4178', '#172a55', '#0a1430', '#02040f', '#0d1834', '#12204a', '#18295a']
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+<defs>
+<radialGradient id="slw" cx=".5" cy=".42" r=".7"><stop offset="0" stop-color="${c0}"/><stop offset=".42" stop-color="${c1}"/><stop offset=".78" stop-color="${c2}"/><stop offset="1" stop-color="${c3}"/></radialGradient>
+<linearGradient id="slf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${f0}" stop-opacity="0"/><stop offset=".55" stop-color="${f1}" stop-opacity=".55"/><stop offset="1" stop-color="${f2}" stop-opacity=".8"/></linearGradient>
+</defs>
+<rect width="1600" height="1000" fill="url(#slw)"/>
+<rect y="700" width="1600" height="300" fill="url(#slf)"/>
+</svg>`
+}
+const SPOTLIGHT: Record<Look, string> = { dark: spotlightOf('dark'), light: spotlightOf('light') }
 const SCENES: Record<SceneName, SceneFrames> = {
+  // Still: the Backdrop hook draws SPOTLIGHT for the app's look instead of these frames.
+  spotlight: drawAll(() => SPOTLIGHT.dark, SPOTLIGHT.dark),
   circuit: drawAll(circuitScene),
   horizon: drawAll(horizonScene),
   'data-room': drawAll(dataRoomScene),
@@ -1262,14 +1310,23 @@ const SCENES: Record<SceneName, SceneFrames> = {
 // (blur would soften the floor lines behind the chat too). The glass stays on with the same
 // tint, though: with no glass at all, the app paints its panels (the prompt area) solid.
 // A light scene takes the paper theme, which makes the app light while it is shown.
-const lookFor = (name: SceneName): ThemeSetArgs =>
-  SCENE_LOOK[name] === 'light'
+// A scene's look, with "auto" (spotlight) taking the app's own.
+const resolvedLook = (name: SceneName, own: Look): Look => {
+  const look = SCENE_LOOK[name]
+  return look === 'auto' ? own : look
+}
+const lookFor = (name: SceneName, own: Look): ThemeSetArgs =>
+  resolvedLook(name, own) === 'light'
     ? { colors: paperTheme, backdrop: { scene: name, glass: { blur: 3, tint: PAPER, opacity: 0.35 } } }
     : {
         colors: theme,
         backdrop: { scene: name, glass: { blur: name === 'horizon' ? 0 : 3, tint: '#03061a', opacity: 0.25 } },
       }
-const PLAIN: ThemeSetArgs = { colors: theme }
+// No background: one still colour, cream or night blue as the app's own setting is.
+const PLAIN: Record<Look, ThemeSetArgs> = {
+  dark: { colors: theme, backdrop: { color: '#03061a' } },
+  light: { colors: paperTheme, backdrop: { color: PAPER } },
+}
 
 const PANE = 'hud-dashboard'
 // The help's own pane.
@@ -1293,10 +1350,57 @@ let RED = PALETTES.dark.red
 let AMBER = PALETTES.dark.amber
 let MUTED = PALETTES.dark.muted
 let ACTIVITY_SHOWN = PALETTES.dark.activity
-// The look now: the scene's while the background is on, dark with it off.
+// The look now: the scene's while the background is on; with it off, the app's own
+// light or dark setting (appLook).
 const lookNow = async ($: Engine): Promise<Look> => {
-  const [isOn, name] = await Promise.all([read($, isBackgroundOn), read($, currentScene)])
-  return isOn && isSceneName(name) ? SCENE_LOOK[name] : 'dark'
+  const [isOn, name, own] = await Promise.all([read($, isBackgroundOn), read($, currentScene), read($, appLook)])
+  const ownLook: Look = own === 'light' ? 'light' : 'dark'
+  return isOn && isSceneName(name) ? resolvedLook(name, ownLook) : ownLook
+}
+
+// The desktop app's profile folders (%LOCALAPPDATA%\Claude-Data\<profile>), the one used
+// last first: its config.json holds the light/dark choice, and claude_desktop_config.json
+// the app's own MCP servers.
+const appProfiles = async ($: Engine): Promise<string[]> => {
+  const local = await $.env.get('LOCALAPPDATA').catch(() => undefined)
+  if (!local) return []
+  const base = `${local}/Claude-Data`
+  const entries = await $.fs.list(base).catch(() => [])
+  const found: { dir: string; at: number }[] = []
+  for (const entry of entries) {
+    if (entry.kind !== 'dir') continue
+    const dir = `${base}/${entry.name}`
+    const at = await $.fs
+      .stat(`${dir}/config.json`)
+      .then(s => s.mtimeMs)
+      .catch(() => -1)
+    if (at >= 0) found.push({ dir, at })
+  }
+  return found.sort((a, b) => b.at - a.at).map(one => one.dir)
+}
+// The app's light/dark setting: light, dark, or the PC's own (read from Windows).
+const readAppLook = async ($: Engine): Promise<Look> => {
+  const dir = (await appProfiles($))[0]
+  const mode = dir === undefined ? undefined : (await readJson($, `${dir}/config.json`))?.userThemeMode
+  if (mode === 'light' || mode === 'dark') return mode
+  const ran = await $.process
+    .run(['reg', 'query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', '/v', 'AppsUseLightTheme'], { timeoutMs: 5000 })
+    .catch(() => undefined)
+  return ran !== undefined && /AppsUseLightTheme\s+REG_DWORD\s+0x1\b/i.test(ran.stdout) ? 'light' : 'dark'
+}
+// Reads the app's look again (at start and with the readout); a change while the
+// background is off repaints the app, the band and the dashboard.
+let appLookCheckedAt = -Infinity
+const checkAppLook = async ($: Engine) => {
+  const now = await $.clock.now()
+  if (now - appLookCheckedAt < 10000) return
+  appLookCheckedAt = now
+  const look = await readAppLook($).catch((): Look => 'dark')
+  if ((await read($, appLook)) !== look) {
+    await update($, appLook, () => look)
+    // The look shows with no background and with spotlight, which follows the app.
+    if (!(await read($, isBackgroundOn)) || SCENE_LOOK[await savedScene($)] === 'auto') await applyTheme($)
+  }
 }
 const paintFor = async ($: Engine) => {
   const p = PALETTES[await lookNow($)]
@@ -1517,6 +1621,10 @@ const loadMcpPlaces = async ($: Engine) => {
   // The project's shared servers, and the desktop app's own.
   if (root !== '') take((await readJson($, `${root}/.mcp.json`))?.mcpServers)
   if (appData) take((await readJson($, `${appData}/Claude/claude_desktop_config.json`))?.mcpServers)
+  // The desktop app keeps its own list in its profile folder (Claude-Data\<profile>).
+  for (const dir of await appProfiles($).catch(() => [])) {
+    take((await readJson($, `${dir}/claude_desktop_config.json`))?.mcpServers)
+  }
   for (const group of servers) {
     for (const [name, entry] of Object.entries(group)) {
       const place = mcpPlaceOf(name, entry)
@@ -2170,6 +2278,7 @@ const AGENT_QUIET_MS = 30 * 60 * 1000
 
 const refresh = async ($: Engine) => {
   try {
+    void checkAppLook($)
     if (busy) {
       lastSeconds = Math.round(((await $.clock.now()) - startedAt) / 1000)
     }
@@ -2389,7 +2498,8 @@ const savedScene = async ($: Engine): Promise<SceneName> => {
 // Applies the saved switches: the named background, or the colours alone.
 const applyTheme = async ($: Engine) => {
   const isOn = await read($, isBackgroundOn)
-  const set = await $.theme.set(isOn ? lookFor(await savedScene($)) : PLAIN)
+  const own: Look = (await read($, appLook)) === 'light' ? 'light' : 'dark'
+  const set = await $.theme.set(isOn ? lookFor(await savedScene($), own) : PLAIN[own])
   lastSet = set
   return set
 }
@@ -2511,7 +2621,7 @@ const revealFile = async ($: Engine, path: string, how: 'select' | 'open' = 'sel
 }
 
 // The version shown in the dashboard; build.ps1 checks it matches .claude-plugin/plugin.json.
-const VERSION = '1.1.0'
+const VERSION = '1.2.0'
 // Where the project lives on GitHub (shown in the help's credits).
 const REPO_URL = 'https://github.com/leoplusma/ops-deck'
 
@@ -2583,6 +2693,8 @@ const EN = {
   close: 'Close',
   // The band.
   active: '◉ ACTIVE',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ THINKING', files: '◉ FILES', run: '◉ RUNNING', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ STANDBY',
   done: '✔ DONE',
   alertLine: (tool: string, reason: Reason) => `▲ ${tool.toUpperCase()} ${reason.toUpperCase()}`,
@@ -2678,6 +2790,8 @@ const EL: Texts = {
   hideHelp: 'Κλείσιμο βοήθειας',
   close: 'Κλείσιμο',
   active: '◉ ΣΕ ΛΕΙΤΟΥΡΓΙΑ',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ ΣΚΕΨΗ', files: '◉ ΑΡΧΕΙΑ', run: '◉ ΕΚΤΕΛΕΣΗ', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ ΑΝΑΜΟΝΗ',
   done: '✔ ΕΤΟΙΜΟ',
   alertLine: (tool: string, reason: Reason) =>
@@ -2768,6 +2882,8 @@ const DE: Texts = {
   hideHelp: 'Hilfe ausblenden',
   close: 'Schließen',
   active: '◉ AKTIV',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ DENKT', files: '◉ DATEIEN', run: '◉ LÄUFT', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ BEREIT',
   done: '✔ FERTIG',
   alertLine: (tool: string, reason: Reason) =>
@@ -2856,6 +2972,8 @@ const FR: Texts = {
   hideHelp: "Masquer l'aide",
   close: 'Fermer',
   active: '◉ ACTIF',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ RÉFLEXION', files: '◉ FICHIERS', run: '◉ EXÉCUTION', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ EN ATTENTE',
   done: '✔ TERMINÉ',
   alertLine: (tool: string, reason: Reason) =>
@@ -2944,6 +3062,8 @@ const ES: Texts = {
   hideHelp: 'Ocultar ayuda',
   close: 'Cerrar',
   active: '◉ ACTIVO',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ PENSANDO', files: '◉ ARCHIVOS', run: '◉ EJECUTANDO', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ EN ESPERA',
   done: '✔ LISTO',
   alertLine: (tool: string, reason: Reason) =>
@@ -3032,6 +3152,8 @@ const IT: Texts = {
   hideHelp: 'Nascondi aiuto',
   close: 'Chiudi',
   active: '◉ ATTIVO',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ PENSA', files: '◉ FILE', run: '◉ ESECUZIONE', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ IN ATTESA',
   done: '✔ FATTO',
   alertLine: (tool: string, reason: Reason) =>
@@ -3121,6 +3243,8 @@ const PT: Texts = {
   hideHelp: 'Ocultar ajuda',
   close: 'Fechar',
   active: '◉ ATIVO',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ PENSANDO', files: '◉ ARQUIVOS', run: '◉ EXECUTANDO', web: '◉ WEB' } as Record<Activity, string>,
   standby: '○ EM ESPERA',
   done: '✔ PRONTO',
   alertLine: (tool: string, reason: Reason) =>
@@ -3211,6 +3335,8 @@ const ZH: Texts = {
   hideHelp: '隐藏帮助',
   close: '关闭',
   active: '◉ 运行中',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ 思考中', files: '◉ 文件', run: '◉ 运行中', web: '◉ 网络' } as Record<Activity, string>,
   standby: '○ 待机',
   done: '✔ 完成',
   alertLine: (tool: string, reason: Reason) => `▲ ${tool.toUpperCase()} ${reason === 'blocked' ? '已拦截' : '失败'}`,
@@ -3299,6 +3425,8 @@ const JA: Texts = {
   hideHelp: 'ヘルプを隠す',
   close: '閉じる',
   active: '◉ 稼働中',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ 思考中', files: '◉ ファイル', run: '◉ 実行中', web: '◉ Web' } as Record<Activity, string>,
   standby: '○ 待機中',
   done: '✔ 完了',
   alertLine: (tool: string, reason: Reason) => `▲ ${tool.toUpperCase()} ${reason === 'blocked' ? 'ブロック' : '失敗'}`,
@@ -3388,6 +3516,8 @@ const AR: Texts = {
   hideHelp: 'إخفاء المساعدة',
   close: 'إغلاق',
   active: '◉ يعمل',
+  // What Claude is doing, shown in the band while it works with no moving background.
+  doing: { think: '◉ يفكر', files: '◉ ملفات', run: '◉ تشغيل', web: '◉ ويب' } as Record<Activity, string>,
   standby: '○ في الانتظار',
   done: '✔ تم',
   alertLine: (tool: string, reason: Reason) => `▲ ${tool} ${reason === 'blocked' ? 'محظور' : 'فشل'}`,
@@ -3575,6 +3705,11 @@ export const register: Register = on => {
     await update($, currentScene, () => scene)
     const savedLang = await $.store.get('language')
     await update($, language, () => (isLang(savedLang) ? savedLang : 'en'))
+    // The app's own light or dark setting, before the theme: no background follows it.
+    await attempt('app look', async () => {
+      const look = await readAppLook($).catch((): Look => 'dark')
+      await update($, appLook, () => look)
+    })
     await attempt('theme.set', async () => {
       const set = await applyTheme($)
       if (!set.isDrawn) {
@@ -3820,6 +3955,18 @@ export const register: Register = on => {
       return next(e)
     }
     const { Svg } = $.ui.resolve(e)
+    // Spotlight is still: the app's look picks ivory or blue-black, whatever Claude is doing.
+    if (name === 'spotlight') {
+      const look: Look = (await read($, appLook)) === 'light' ? 'light' : 'dark'
+      return (
+        <Svg
+          key={`spotlight-${look}`}
+          source={SPOTLIGHT[look]}
+          alt={look === 'light' ? 'A still ivory studio backdrop, softly lit in the middle' : 'A still blue-black studio backdrop, softly lit in the middle'}
+          isInteractive
+        />
+      )
+    }
     const [fault, working, doing] = await Promise.all([read($, alert), read($, isThinking), read($, activity)])
     const act: Activity = ACTIVITIES.includes(doing as Activity) ? (doing as Activity) : 'think'
     const wanted: Mode = fault !== null ? 'alert' : working ? 'busy' : settled ? 'rest' : 'idle'
@@ -3902,6 +4049,12 @@ export const register: Register = on => {
     // Context: amber from 70%, red with a warning mark from 90% (time to /compact).
     const ctx = r.contextPercent
     const ctxHigh = ctx !== null && ctx >= 70
+    // While Claude works, the band says what it is doing (◉ THINKING, FILES, RUNNING, WEB),
+    // its word and frame in the activity colour, matching the scene behind it.
+    const doingNow = await read($, activity)
+    const act: Activity = ACTIVITIES.includes(doingNow as Activity) ? (doingNow as Activity) : 'think'
+    const showsDoing = working && fault === null
+    const workColor = showsDoing ? ACTIVITY_SHOWN[act] : GREEN
 
     // One line: the readouts on the left (the model name is left to the app, which shows it
     // under the prompt), the dashboard button against the right edge.
@@ -3913,8 +4066,8 @@ export const register: Register = on => {
             {t.alertLine(fault.tool, fault.reason)}
           </Text>
         ) : (
-          <Text mono bold color={working || done ? GREEN : CYAN}>
-            {working ? t.active : done ? t.done : t.standby}
+          <Text mono bold color={working ? workColor : done ? GREEN : CYAN}>
+            {showsDoing ? t.doing[act] : working ? t.active : done ? t.done : t.standby}
           </Text>
         )}
         <Text mono dimColor>│</Text>
@@ -3954,7 +4107,7 @@ export const register: Register = on => {
       <Box
         key="band-frame"
         borderStyle="round"
-        borderColor={fault !== null ? RED : GREEN}
+        borderColor={fault !== null ? RED : working ? workColor : GREEN}
         backgroundColor={BAND_FILL}
         paddingX={1}
       >
@@ -4120,7 +4273,10 @@ export const register: Register = on => {
             key="scene"
             label={t.scene}
             value={backgroundOn ? scene : 'none'}
-            options={[{ value: 'none', label: t.none }, ...SCENE_NAMES.map(name => ({ value: name, label: SCENE_LOOK[name] === 'light' ? `${sceneTitle(name)} ☀` : sceneTitle(name) }))]}
+            options={[
+              { value: 'none', label: `${t.none} ${LOOK_MARK.auto}` },
+              ...SCENE_NAMES.map(name => ({ value: name, label: `${sceneTitle(name)} ${LOOK_MARK[SCENE_LOOK[name]]}` })),
+            ]}
             onSelect={value => {
               if (value === 'none') {
                 void setBackground($, false)

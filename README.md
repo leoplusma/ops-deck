@@ -21,7 +21,8 @@
 ## What it does
 
 - **Nine animated backgrounds** that fade in while Claude works and fade out when it's done: five dark (circuit, horizon, data room, code rain, signal) and four light (ink plotter, halftone tide, digital cream, heartline). A light scene also switches the app, the band and the dashboard to light colours. One colour tells you what Claude is doing right now: **violet** thinking, **amber** working with files, **green** running commands, **magenta** reaching the web. Everything turns **red** when a tool fails.
-- **A status band above the prompt**: working or idle, context used, 5-hour and weekly plan usage, time worked, tool calls and an API cost estimate. It flashes green on a clean finish and turns red on a failure.
+- **Two still choices** that follow the app's own light or dark setting: **spotlight**, a quiet studio backdrop (blue-black or ivory), and **None**, one plain colour (night blue or cream). In the Scene list, ☾ marks dark scenes, ☀ light ones and ◐ the ones that follow the app.
+- **A status band above the prompt**: what Claude is doing (◉ THINKING, FILES, RUNNING or WEB, in that colour) or idle, context used, 5-hour and weekly plan usage, time worked, tool calls and an API cost estimate. It flashes green on a clean finish and turns red on a failure.
 - **A session dashboard** in the side pane:
   - **The session folder**, with a 📂 button that opens it.
   - **What left this PC**: every web or network place a tool call reached, with the exact command, and the tries a hook blocked.
@@ -86,13 +87,13 @@ To report a problem, [open an issue](https://github.com/leoplusma/ops-deck/issue
 ## Use
 
 - Pick a **scene** and a **language** at the top of the dashboard. **Help** explains every colour and mark.
-- Or ask Claude: *"open the ops-deck dashboard"*, *"close the ops-deck dashboard"*, *"ops-deck scene signal"*, *"ops-deck scene digital cream"*, *"ops-deck background off"*, *"open the ops-deck demo"*.
+- Or ask Claude: *"open the ops-deck dashboard"*, *"close the ops-deck dashboard"*, *"ops-deck scene signal"*, *"ops-deck scene digital cream"*, *"ops-deck scene spotlight"*, *"ops-deck background off"*, *"open the ops-deck demo"*.
 
 ## Turn it off or remove it
 
 | You want | Do this |
 |---|---|
-| A calmer screen | Pick **None** in the Scene list (or ask *"ops-deck background off"*); close the dashboard. The band and colours stay. |
+| A calmer screen | Pick **spotlight** or **None** in the Scene list (or ask *"ops-deck background off"*); close the dashboard. Nothing moves; the band still says what Claude is doing. |
 | ops-deck off, kept installed | `/plugin disable ops-deck@ops-deck` (back on: `/plugin enable ops-deck@ops-deck`), or manage it under **+ › Plugins** in the desktop app. |
 | ops-deck gone | `/plugin uninstall ops-deck@ops-deck`, then `/plugin marketplace remove ops-deck`. |
 
@@ -118,6 +119,15 @@ Then open a new session or type `/reload-plugins`.
 | **halftone tide** | ![](assets/scenes/halftone-tide-working.jpg) | ![](assets/scenes/halftone-tide-error.jpg) |
 | **digital cream** | ![](assets/scenes/digital-cream-working.jpg) | ![](assets/scenes/digital-cream-error.jpg) |
 | **heartline** | ![](assets/scenes/heartline-working.jpg) | ![](assets/scenes/heartline-error.jpg) |
+
+### Still, following the app's light or dark setting
+
+These don't move or turn red; the band shows the work and the errors.
+
+| | App in dark | App in light |
+|---|---|---|
+| **spotlight** | ![](assets/scenes/spotlight-dark.jpg) | ![](assets/scenes/spotlight-light.jpg) |
+| **None** | ![](assets/scenes/none-dark.jpg) | ![](assets/scenes/none-light.jpg) |
 
 ## The dashboard
 

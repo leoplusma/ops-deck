@@ -167,16 +167,24 @@ test('the scene list offers every background and switches to the one picked', as
     looks.push(e)
     return { value: { isDrawn: true, requestId: 'test' } }
   })
+  // The app itself is set to light.
+  on('state.get', ($, e, next) => (e.key === 'appLook' ? { value: { value: 'light', version: 1 } } : next(e)))
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
   const scene = await ui.find({ type: 'Select', key: 'scene' })
   const options = scene?.props.options as { value: string; label: string }[] | undefined
   expect(options?.map(o => o.value)).toEqual([
-    'none', 'circuit', 'horizon', 'data-room', 'code-rain', 'signal', 'ink-plotter', 'halftone-tide', 'digital-cream', 'heartline',
+    'none', 'spotlight', 'circuit', 'horizon', 'data-room', 'code-rain', 'signal', 'ink-plotter', 'halftone-tide', 'digital-cream', 'heartline',
   ])
-  // The light scenes carry a small sun in the list.
+  // Each entry is marked ☀ light, ☾ dark or ◐ following the app (None and spotlight).
   expect(options?.find(o => o.value === 'ink-plotter')?.label).toBe('ink plotter ☀')
-  expect(options?.find(o => o.value === 'signal')?.label).toBe('signal')
+  expect(options?.find(o => o.value === 'signal')?.label).toBe('signal ☾')
+  expect(options?.find(o => o.value === 'none')?.label).toBe('None ◐')
+  expect(options?.find(o => o.value === 'spotlight')?.label).toBe('spotlight ◐')
+
+  // Spotlight follows the app: with the app set to light, the paper theme.
+  await ui.select({ key: 'scene', value: 'spotlight' })
+  expect(JSON.stringify(looks[looks.length - 1])).toContain('HUD paper')
 
   // A light scene takes the paper theme (the app turns light), and a dark one the HUD theme.
   await ui.select({ key: 'scene', value: 'halftone-tide' })
@@ -191,6 +199,9 @@ test('the scene list offers every background and switches to the one picked', as
   await ui.select({ key: 'scene', value: 'none' })
   expect((await ui.find({ type: 'Select', key: 'scene' }))?.props.value).toBe('none')
   expect(saved.background).toBe(false)
+  // With the app set to light, no background is plain cream with the paper theme.
+  expect(JSON.stringify(looks[looks.length - 1])).toContain('HUD paper')
+  expect(JSON.stringify(looks[looks.length - 1])).toContain('"color":"#f3ead6"')
   await ui.select({ key: 'scene', value: 'horizon' })
   expect((await ui.find({ type: 'Select', key: 'scene' }))?.props.value).toBe('horizon')
   expect(saved.background).toBe(true)

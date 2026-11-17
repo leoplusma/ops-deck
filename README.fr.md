@@ -19,6 +19,7 @@
 ## Ce qu’il fait
 
 - **Neuf fonds animés** : cinq sombres (circuit, horizon, data room, code rain, signal) et quatre clairs (ink plotter, halftone tide, digital cream, heartline). Une scène claire passe aussi l’application, la bande et le tableau de bord en couleurs claires. Une couleur indique ce que fait Claude : **violet** réflexion, **ambre** fichiers, **vert** commandes, **magenta** web. Tout passe au **rouge** quand un outil échoue.
+- **Deux choix immobiles** qui suivent le réglage clair ou sombre de l’application : **spotlight**, un fond de studio calme (bleu-noir ou ivoire), et **None**, une couleur unie (bleu nuit ou crème). Dans la liste des scènes : ☾ sombre, ☀ claire, ◐ suit l’application.
 - **Bande d’état** au-dessus du prompt : contexte, utilisation du forfait (5 heures et semaine), temps, appels d’outils, estimation du coût.
 - **Tableau de bord** : ce qui a quitté votre PC, graphe des fichiers, outils, sous-agents, tours récents, aide et un onglet de démo.
 - **Dix langues.** Tout reste sur votre PC : ops-deck n’envoie rien nulle part.

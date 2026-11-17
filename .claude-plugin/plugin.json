@@ -1,6 +1,6 @@
 {
   "name": "ops-deck",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A sci-fi heads-up display for the Claude desktop app: five animated backgrounds that show what Claude is doing, a status band above the prompt, and a session dashboard (usage, what left your PC, files, tools, subagents) in ten languages.",
   "author": { "name": "Minas N. Miliaras", "url": "https://github.com/leoplusma" },
   "homepage": "https://github.com/leoplusma/ops-deck",

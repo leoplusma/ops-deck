@@ -34,6 +34,28 @@ test('the band has no frame at rest, and a red one after a tool fails', async ($
   await ui.unmount()
 })
 
+test('the band shows what Claude is doing in its colour, on every scene', async ($, on) => {
+  on('clock.now', () => ({ value: 1794700000000 }))
+  // Working on files, with the background off.
+  const state: Record<string, unknown> = { isThinking: true, activity: 'files', isBackgroundOn: false }
+  on('state.get', ($, e, next) => (e.key in state ? { value: { value: state[e.key], version: 1 } } : next(e)))
+
+  let ui = await $.ui.mount(BAND)
+  const word = await ui.find({ type: 'Text', text: /^◉ FILES$/ })
+  expect(word?.props.color).toBe('#ffb020')
+  expect((await ui.find({ type: 'Box', key: 'band-frame' }))?.props.borderColor).toBe('#ffb020')
+  await ui.unmount()
+
+  // A moving scene too: running a command, in the run colour.
+  state.isBackgroundOn = true
+  state.currentScene = 'horizon'
+  state.activity = 'run'
+  ui = await $.ui.mount(BAND)
+  expect((await ui.find({ type: 'Text', text: /^◉ RUNNING$/ }))?.props.color).toBe('#33f5b0')
+  expect((await ui.find({ type: 'Box', key: 'band-frame' }))?.props.borderColor).toBe('#33f5b0')
+  await ui.unmount()
+})
+
 test('the band has a button that opens and closes the dashboard', async ($, on) => {
   on('clock.now', () => ({ value: 1794700000000 }))
   const saved: Record<string, unknown> = {}

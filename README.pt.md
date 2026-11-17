@@ -19,6 +19,7 @@
 ## O que faz
 
 - **Nove fundos animados**: cinco escuros (circuit, horizon, data room, code rain, signal) e quatro claros (ink plotter, halftone tide, digital cream, heartline). Uma cena clara também deixa o app, a faixa e o painel em cores claras. Uma cor mostra o que o Claude faz: **violeta** pensando, **âmbar** arquivos, **verde** comandos, **magenta** web. Tudo fica **vermelho** quando uma ferramenta falha.
+- **Duas opções paradas** que seguem o modo claro ou escuro do app: **spotlight**, um fundo de estúdio tranquilo (azul-escuro ou marfim), e **None**, uma cor lisa (azul-noite ou creme). Na lista de cenas: ☾ escura, ☀ clara, ◐ segue o app.
 - **Faixa de status** acima do prompt: contexto, uso do plano (5 horas e semana), tempo, chamadas de ferramentas, custo estimado.
 - **Painel de sessão**: o que saiu do seu PC, gráfico de arquivos, ferramentas, subagentes, rodadas recentes, ajuda e uma aba de demonstração.
 - **Dez idiomas.** Tudo fica no seu PC: o ops-deck não envia nada para lugar nenhum.

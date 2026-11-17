@@ -19,6 +19,7 @@
 ## Was es kann
 
 - **Neun animierte Hintergründe**: fünf dunkle (circuit, horizon, data room, code rain, signal) und vier helle (ink plotter, halftone tide, digital cream, heartline). Eine helle Szene schaltet auch die App, die Leiste und das Dashboard auf helle Farben. Eine Farbe zeigt, was Claude tut: **Violett** denkt, **Bernstein** Dateien, **Grün** Befehle, **Magenta** Web. Alles wird **rot**, wenn ein Werkzeug fehlschlägt.
+- **Zwei ruhige Varianten**, die der hellen oder dunklen Einstellung der App folgen: **spotlight**, ein stiller Studiohintergrund (blauschwarz oder elfenbein), und **None**, eine schlichte Farbe (Nachtblau oder Creme). In der Szenenliste: ☾ dunkel, ☀ hell, ◐ folgt der App.
 - **Statusleiste** über dem Prompt: Kontext, Plan-Nutzung (5 Stunden und Woche), Zeit, Werkzeugaufrufe, Kostenschätzung.
 - **Sitzungs-Dashboard**: was deinen PC verlassen hat, Datei-Graph, Werkzeuge, Subagenten, letzte Runden, Hilfe und ein Demo-Tab.
 - **Zehn Sprachen.** Alles läuft lokal: ops-deck sendet nichts irgendwohin.

@@ -104,6 +104,8 @@ declare module 'claude-code' {
       activity: string
       // The language of the dashboard and the band, mirroring the saved choice: en, el, de, fr, es or it.
       language: string
+      // The desktop app's own light or dark setting ('light' or 'dark'), followed with the background off.
+      appLook: string
       // The helper agents started this session, newest last.
       agents: Shaped<AgentRun[]>
     }

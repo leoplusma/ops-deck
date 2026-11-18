@@ -1383,11 +1383,19 @@ const readAppLook = async ($: Engine): Promise<Look> => {
   const dir = (await appProfiles($))[0]
   const mode = dir === undefined ? undefined : (await readJson($, `${dir}/config.json`))?.userThemeMode
   if (mode === 'light' || mode === 'dark') return mode
+  // Following the PC: Windows' own setting, read with reg.exe at most once a minute (each
+  // read starts a process).
+  const now = await $.clock.now()
+  if (pcLook !== undefined && now - pcLookAt < 60000) return pcLook
   const ran = await $.process
     .run(['reg', 'query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', '/v', 'AppsUseLightTheme'], { timeoutMs: 5000 })
     .catch(() => undefined)
-  return ran !== undefined && /AppsUseLightTheme\s+REG_DWORD\s+0x1\b/i.test(ran.stdout) ? 'light' : 'dark'
+  pcLook = ran !== undefined && /AppsUseLightTheme\s+REG_DWORD\s+0x1\b/i.test(ran.stdout) ? 'light' : 'dark'
+  pcLookAt = now
+  return pcLook
 }
+let pcLook: Look | undefined
+let pcLookAt = -Infinity
 // Reads the app's look again (at start and with the readout); a change while the
 // background is off repaints the app, the band and the dashboard.
 let appLookCheckedAt = -Infinity
@@ -1776,6 +1784,9 @@ const fileGraph = (
   width: number = GRAPH_W,
   // The words on the mark that zooms back out, in the dashboard's language.
   resetLabel = 'Whole view',
+  // Whether anything may pulse: only while Claude works with a scene chosen. With no
+  // background (None, often picked on PCs without a graphics card) nothing moves.
+  moving = working,
 ): string => {
   const frame = frameOf(view, width)
   // Text grows with the zoom, but slower than the drawing, so more names fit.
@@ -1887,11 +1898,13 @@ const fileGraph = (
       const right = p.x >= folderX
       // Every file has its name; the ones beyond the first few show only while zoomed in.
       const label = `<text class="fn${named.has(i) ? '' : ' fz'}" x="${n1(p.x + (right ? size + 4 : -size - 4))}" y="${n1(p.y + 5 * k)}" text-anchor="${right ? 'start' : 'end'}">${xml(clip(nameOf(f.path), frame.zoom >= 2 ? 32 : 22))}</text>`
-      const pulse = f.path === newest ? `<circle class="pl" cx="${n1(p.x)}" cy="${n1(p.y)}" r="${n1(size)}" stroke="${color}"/>` : ''
+      // The newest file pulses only while Claude works with a scene chosen: an endless animation keeps a PC
+      // without a graphics card busy redrawing the pane even when nothing happens.
+      const pulse = f.path === newest && moving ? `<circle class="pl" cx="${n1(p.x)}" cy="${n1(p.y)}" r="${n1(size)}" stroke="${color}"/>` : ''
       return `${pulse}<circle id="n${i}" tabindex="0" cx="${n1(p.x)}" cy="${n1(p.y)}" r="${n1(size)}" fill="${color}"><title>${xml(f.path)} · ${fileFacts(f)}</title></circle>${label}`
     })
     .join('')
-  const session = `<path d="M${cx} ${cy - 11}l10 18h-20z" fill="${working ? GREEN : MUTED}"${working ? ' class="live"' : ''}><title>This session</title></path>`
+  const session = `<path d="M${cx} ${cy - 11}l10 18h-20z" fill="${working ? GREEN : MUTED}"${moving ? ' class="live"' : ''}><title>This session</title></path>`
 
   // Click to zoom, without scripts (the frame runs none): files and folders take focus
   // when clicked, and a rule per item moves its point to the middle, enlarged. Clicking
@@ -2300,7 +2313,11 @@ const refresh = async ($: Engine) => {
       tools,
       seconds: lastSeconds,
     }
-    await update($, readout, () => next)
+    // Stored only when something changed: every store redraws the band and the whole
+    // dashboard, graphs included, which costs a PC without a graphics card.
+    if (JSON.stringify(await read($, readout)) !== JSON.stringify(next)) {
+      await update($, readout, () => next)
+    }
   } catch (error) {
     if (!reported) {
       reported = true
@@ -2571,8 +2588,13 @@ const findSessionName = async ($: Engine): Promise<string | null> => {
   return typeof row.customTitle === 'string' && row.customTitle.trim() !== '' ? row.customTitle.trim() : null
 }
 
-// Puts the session's name in the dashboard's title, when it changed.
+// Puts the session's name in the dashboard's title, when it changed. Looked up at most
+// every five minutes: the search starts PowerShell and reads the whole transcript.
+let retitledAt = -Infinity
 const retitle = async ($: Engine): Promise<void> => {
+  const now = await $.clock.now()
+  if (now - retitledAt < 5 * 60000) return
+  retitledAt = now
   try {
     const title = titleFor(await findSessionName($))
     if (title !== paneTitle) {
@@ -2621,7 +2643,7 @@ const revealFile = async ($: Engine, path: string, how: 'select' | 'open' = 'sel
 }
 
 // The version shown in the dashboard; build.ps1 checks it matches .claude-plugin/plugin.json.
-const VERSION = '1.2.0'
+const VERSION = '1.2.1'
 // Where the project lives on GitHub (shown in the help's credits).
 const REPO_URL = 'https://github.com/leoplusma/ops-deck'
 
@@ -4232,7 +4254,7 @@ export const register: Register = on => {
               <Box key={`files-graph-${canvas}`}>
               <Svg
                 key={`graph-${canvas}`}
-                source={fileGraph(fileRows, working, { zoom: 1, x: 0, y: 0 }, canvas, t.wholeView)}
+                source={fileGraph(fileRows, working, { zoom: 1, x: 0, y: 0 }, canvas, t.wholeView, working && backgroundOn)}
                 width={canvas}
                 height={graphHeight(canvas, false)}
                 alt={`A graph of the ${fileRows.length} files touched this session, grouped by folder`}

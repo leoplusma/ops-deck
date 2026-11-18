@@ -234,6 +234,36 @@ test('the dashboard graphs the files and details the tools', async ($, on) => {
   expect(await ui.find({ type: 'Box', key: 'files-graph-360' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /read ×1 · edited ×1/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /npm test/ })).toBeDefined()
+  // Idle, nothing in the graph moves: an endless pulse costs a PC without a graphics card.
+  const graph = (await ui.findAll({ type: 'Svg' })).find(one => String(one.props.source).includes('class="fn'))
+  expect(String(graph?.props.source)).toContain('class="fn')
+  expect(String(graph?.props.source)).not.toContain('class="pl"')
+  await ui.unmount()
+})
+
+test('the newest file pulses while Claude works with a scene, never with None', async ($, on) => {
+  on('clock.now', () => ({ value: 1794700000000 }))
+  on('tool.call', () => ({ result: {} }))
+  const state: Record<string, unknown> = { isThinking: true, isBackgroundOn: false }
+  on('state.get', ($, e, next) => (e.key in state ? { value: { value: state[e.key], version: 1 } } : next(e)))
+  await $.tool.call({ tool: 'Read', file_path: 'C:/work/app/src/main.ts' })
+  const mount = () => $.ui.mount({ ...PANE, surface: 'desktop' })
+  const graphSource = async (ui: Awaited<ReturnType<typeof mount>>) =>
+    String((await ui.findAll({ type: 'Svg' })).find(one => String(one.props.source).includes('class="fn'))?.props.source)
+
+  // Working, with None: nothing pulses.
+  let ui = await mount()
+  let source = await graphSource(ui)
+  expect(source).toContain('class="fn')
+  expect(source).not.toContain('class="pl"')
+  expect(source).not.toContain('class="live"')
+  await ui.unmount()
+
+  // Working, with a scene: the newest file pulses.
+  state.isBackgroundOn = true
+  ui = await mount()
+  source = await graphSource(ui)
+  expect(source).toContain('class="pl"')
   await ui.unmount()
 })
 

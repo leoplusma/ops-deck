@@ -349,13 +349,13 @@ const circuitScene = (mode: Mode, act: Activity) => {
   const inward = CORE.leads
     .map((d, i) => `<path class="cp" pathLength="100" style="--d:-${((i * 0.618) % 1 * 3).toFixed(2)}s" d="${d}"/>`)
     .join('')
-  const h = CORE.half
+  const side = CORE.half
   // Drawn at half its designed size.
   const chip = `<g transform="translate(${CORE_X} ${CORE_Y}) scale(.5)">
 ${CORE_GLOW ? '<circle class="cg" r="230" fill="url(#cg)"/>' : ''}
 <path class="cl" d="${CORE.leads.join('')}"/>${inward}
 <path class="cpin" d="${CORE.pins}"/>
-<rect class="cbody" x="${-h}" y="${-h}" width="${h * 2}" height="${h * 2}" rx="6"/>
+<rect class="cbody" x="${-side}" y="${-side}" width="${side * 2}" height="${side * 2}" rx="6"/>
 <rect class="cdie" x="-34" y="-34" width="68" height="68" rx="3"/>
 <path class="cmark" d="M-20 -9h40M-20 0h40M-20 9h27"/>
 </g>`
@@ -569,8 +569,8 @@ const DG_PARTS = (() => {
       } else if (roll < 0.68) {
         // A tiny bar chart: five thin bars standing on the row.
         const bars = Array.from({ length: 5 }, (_, k) => {
-          const h = 2 + Math.round(rand() * 8)
-          return `<rect class="${k === 4 ? tone : 'o2'}" x="${indent + k * 4}" y="${y + 2 - h}" width="2" height="${h}"/>`
+          const tall = 2 + Math.round(rand() * 8)
+          return `<rect class="${k === 4 ? tone : 'o2'}" x="${indent + k * 4}" y="${y + 2 - tall}" width="2" height="${tall}"/>`
         })
         parts.push(bars.join(''))
         y += 4
@@ -588,7 +588,7 @@ const DG_PARTS = (() => {
   const sparks = Array.from({ length: 26 }, () => ({
     x: Math.round(60 + rand() * 1480),
     y: Math.round(90 + rand() * 500),
-    h: Math.round(8 + rand() * 26),
+    tall: Math.round(8 + rand() * 26),
   }))
   return { traces, columns, sparks }
 })()
@@ -629,7 +629,7 @@ const dataRoomScene = (mode: Mode, act: Activity) => {
     .map(c => `<g transform="translate(${c.x} 76)"><rect class="hd" x="-6" y="0" width="58" height="12" rx="2"/><text class="hl" x="0" y="9">${c.label}</text></g>`)
     .join('')
   const sparks = DG_PARTS.sparks
-    .map((s, i) => `<rect${i % 3 === 0 ? ' class="tw"' : ''} x="${s.x}" y="${s.y}" width="2" height="${s.h}"/>`)
+    .map((s, i) => `<rect${i % 3 === 0 ? ' class="tw"' : ''} x="${s.x}" y="${s.y}" width="2" height="${s.tall}"/>`)
     .join('')
   const floorLines = Array.from({ length: 12 }, (_, k) => {
     const y = DG_HORIZON + 360 * ((k + 1) / 12) ** 2
@@ -999,9 +999,9 @@ const htBand = (mid: number, amp: number, half: number, phase: number) => {
     const a = (x / IP_WAVE) * Math.PI * 2 + phase
     const y = mid + amp * Math.sin(a) + amp * 0.1 * Math.sin(2 * a + 1)
     // The band swells a little and thins again, gently, so its edges keep the flow.
-    const h = half * (0.9 + 0.1 * Math.sin(a + phase + 1.2))
-    top.push([x, y - h])
-    bottom.unshift([x, y + h])
+    const lift = half * (0.9 + 0.1 * Math.sin(a + phase + 1.2))
+    top.push([x, y - lift])
+    bottom.unshift([x, y + lift])
   }
   return `${curveThrough(top)}${curveThrough(bottom, 'L')}Z`
 }
@@ -1535,23 +1535,23 @@ const fullOf = (tool: string, input: unknown): string => {
 
 // Where a host is: this PC, the local network, or the internet.
 const scopeOf = (raw: string): 'local' | 'lan' | 'web' => {
-  const h = raw
+  const host = raw
     .toLowerCase()
     .replace(/^.*@/, '')
     .replace(/^\[(.*)\](:\d+)?$/, '$1')
     .replace(/:\d+$/, '')
     .replace(/[\\,].*$/, '')
-  if (h === '' || h === '.' || h === 'localhost' || h.endsWith('.localhost') || h === '::1' || h.startsWith('127.') || h === '0.0.0.0' || h.startsWith('(local')) {
+  if (host === '' || host === '.' || host === 'localhost' || host.endsWith('.localhost') || host === '::1' || host.startsWith('127.') || host === '0.0.0.0' || host.startsWith('(local')) {
     return 'local'
   }
   if (
-    /^10\./.test(h) ||
-    /^192\.168\./.test(h) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-    /^169\.254\./.test(h) ||
-    /^f[cd][0-9a-f]{2}:/.test(h) ||
-    /\.(local|lan|home|internal|corp)$/.test(h) ||
-    !h.includes('.')
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^f[cd][0-9a-f]{2}:/.test(host) ||
+    /\.(local|lan|home|internal|corp)$/.test(host) ||
+    !host.includes('.')
   ) {
     return 'lan'
   }
@@ -1774,7 +1774,7 @@ const frameOf = (view: GraphView, width: number) => {
   const vh = tallH / zoom
   const left = Math.min(width - vw, Math.max(0, width / 2 + (view.x * vw) / 2 - vw / 2))
   const top = Math.min(tallH - vh, Math.max(0, tallH / 2 + (view.y * vh) / 2 - vh / 2))
-  return { zoom, left, top, vw, vh, w: width, h: tallH }
+  return { zoom, left, top, vw, vh, w: width, tall: tallH }
 }
 
 const fileGraph = (
@@ -1795,9 +1795,9 @@ const fileGraph = (
   const list = [...all].sort((a, b) => b.last - a.last).slice(0, 60)
   const newest = list[0]?.path
   const w = frame.w
-  const h = frame.h
+  const tallH = frame.tall
   const cx = w / 2
-  const cy = h / 2
+  const cy = tallH / 2
 
   // Files grouped by folder, folders in order of first appearance.
   const names: string[] = []
@@ -1812,8 +1812,8 @@ const fileGraph = (
   })
   const single = names.length === 1
   const ringX = w * 0.28
-  const ringY = h * 0.3
-  const room = single ? Math.min(h / 2 - 30, 150) : Math.max(34, Math.min(62, ringY * 0.6))
+  const ringY = tallH * 0.3
+  const room = single ? Math.min(tallH / 2 - 30, 150) : Math.max(34, Math.min(62, ringY * 0.6))
   const stretch = single ? 1.6 : 1.25
   // Each folder gets a share of the ring in proportion to its files.
   const shares = names.map(name => Math.sqrt((members.get(name) ?? []).length) + 0.8)
@@ -1910,15 +1910,15 @@ const fileGraph = (
   // when clicked, and a rule per item moves its point to the middle, enlarged. Clicking
   // empty space, or the reset mark, drops the focus and the whole view comes back.
   const zoomTo = (id: string, x: number, y: number, z: number) =>
-    `.scene:has(#${id}:focus){transform:translate(${n1(w / 2 - z * x)}px,${n1(h / 2 - z * y)}px) scale(${z})}`
+    `.scene:has(#${id}:focus){transform:translate(${n1(w / 2 - z * x)}px,${n1(tallH / 2 - z * y)}px) scale(${z})}`
   const zooms = [
     ...list.map((_, i) => zoomTo(`n${i}`, at(i).x, at(i).y, FILE_ZOOM)),
     ...(single ? [] : folders.map((f, i) => zoomTo(`d${i}`, f.x, f.y, FOLDER_ZOOM))),
   ].join('')
-  const reset = `<text class="rs" tabindex="0" x="${n1(w - 8)}" y="${n1(h - 8)}" text-anchor="end">⤢ ${xml(resetLabel)}</text>`
+  const reset = `<text class="rs" tabindex="0" x="${n1(w - 8)}" y="${n1(tallH - 8)}" text-anchor="end">⤢ ${xml(resetLabel)}</text>`
 
   const box = `${n1(frame.left)} ${n1(frame.top)} ${n1(frame.vw)} ${n1(frame.vh)}`
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}" width="${w}" height="${h}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}" width="${w}" height="${tallH}">
 <style>
 .scene{transition:transform .6s ease;transform-origin:0 0}
 ${zooms}
@@ -1989,7 +1989,7 @@ const agentChart = (all: AgentRun[], now: number, width: number, sessionModel = 
   const top = AGENT_TOP
   const labelW = Math.min(170, Math.round(width * 0.38))
   const right = 56
-  const h = agentChartHeight(rows.length)
+  const chartH = agentChartHeight(rows.length)
   const n1 = (v: number) => v.toFixed(1)
   // The stretches when helpers ran, overlapping ones merged, each at least 5 s long.
   const spans = rows
@@ -2074,12 +2074,12 @@ const agentChart = (all: AgentRun[], now: number, width: number, sessionModel = 
   const legend = models
     .map(model => {
       const label = model === '?' ? unknownLabel : model
-      const part = `<rect x="${n1(lx)}" y="${h - 17}" width="12" height="8" rx="2" fill="${modelColor(model)}" fill-opacity=".85"/><text class="lg" x="${n1(lx + 17)}" y="${h - 9}">${xml(label)}</text>`
+      const part = `<rect x="${n1(lx)}" y="${chartH - 17}" width="12" height="8" rx="2" fill="${modelColor(model)}" fill-opacity=".85"/><text class="lg" x="${n1(lx + 17)}" y="${chartH - 9}">${xml(label)}</text>`
       lx += 17 + label.length * 6.2 + 16
       return part
     })
     .join('')
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${h}" width="${width}" height="${h}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${chartH}" width="${width}" height="${chartH}">
 <style>
 .tk{stroke:${CYAN};stroke-opacity:.15;stroke-dasharray:2 4}
 .tt{font:10px monospace;fill:${MUTED}}
@@ -2554,7 +2554,14 @@ const setDashboard = async ($: Engine, isOn: boolean): Promise<string> => {
 
 // This session's name, as the app saved it in the transcript (its last "custom-title"
 // row), or null. The transcript is ~/.claude/projects/<project>/<session id>.jsonl; it
-// can be too big to read whole, so PowerShell picks out the title rows.
+// can be too big to read whole (one read is at most 4 MiB), so it is read from the end in
+// overlapping windows, and the first title row found there is the last one written.
+// The title rows, and how the transcript is read from its end: 4 MiB windows overlapping
+// by 64 KiB, at most 16 of them (the last 60 MiB or so).
+const TITLE_MARK = '"type":"custom-title"'
+const TITLE_WINDOW = 4 * 1024 * 1024
+const TITLE_OVERLAP = 64 * 1024
+const TITLE_WINDOWS = 16
 const findSessionName = async ($: Engine): Promise<string | null> => {
   const id = await $.session.id()
   const projects = `${$.plugin.root.replace(/[\\/]mods[\\/][^\\/]+[\\/]?$/, '')}/projects`
@@ -2570,26 +2577,36 @@ const findSessionName = async ($: Engine): Promise<string | null> => {
   if (file === null) {
     return null
   }
-  const ran = await $.process.run(
-    [
-      'powershell.exe',
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      `$m = Select-String -LiteralPath $env:OPSDECK_TRANSCRIPT -SimpleMatch '"type":"custom-title"' | Select-Object -Last 1; if ($m) { $m.Line }`,
-    ],
-    { env: { OPSDECK_TRANSCRIPT: file }, timeoutMs: 20000 },
-  )
-  const line = ran.stdout.trim()
-  if (line === '') {
-    return null
+  const { size } = await $.fs.stat(file)
+  // A title row is short: a window overlaps the next by more than one, so every row is
+  // whole in some window. The first line of a window and the last (unless it ends the
+  // file) may be cut, and are left to the neighbouring windows.
+  let end = size
+  for (let windows = 0; end > 0 && windows < TITLE_WINDOWS; windows += 1) {
+    const start = Math.max(0, end - TITLE_WINDOW)
+    const text = await $.fs.read(file, { offset: start, length: end - start })
+    const lines = text.split('\n')
+    const last = end === size ? lines.length - 1 : lines.length - 2
+    const first = start === 0 ? 0 : 1
+    for (let i = last; i >= first; i -= 1) {
+      const line = lines[i]?.trim() ?? ''
+      if (!line.includes(TITLE_MARK)) continue
+      let row: { customTitle?: unknown }
+      try {
+        row = JSON.parse(line) as { customTitle?: unknown }
+      } catch {
+        continue
+      }
+      if (typeof row.customTitle === 'string' && row.customTitle.trim() !== '') return row.customTitle.trim()
+    }
+    if (start === 0) break
+    end = start + TITLE_OVERLAP
   }
-  const row = JSON.parse(line) as { customTitle?: unknown }
-  return typeof row.customTitle === 'string' && row.customTitle.trim() !== '' ? row.customTitle.trim() : null
+  return null
 }
 
 // Puts the session's name in the dashboard's title, when it changed. Looked up at most
-// every five minutes: the search starts PowerShell and reads the whole transcript.
+// every five minutes: the search reads the transcript.
 let retitledAt = -Infinity
 const retitle = async ($: Engine): Promise<void> => {
   const now = await $.clock.now()
@@ -2643,7 +2660,7 @@ const revealFile = async ($: Engine, path: string, how: 'select' | 'open' = 'sel
 }
 
 // The version shown in the dashboard; build.ps1 checks it matches .claude-plugin/plugin.json.
-const VERSION = '1.2.1'
+const VERSION = '1.2.2'
 // Where the project lives on GitHub (shown in the help's credits).
 const REPO_URL = 'https://github.com/leoplusma/ops-deck'
 
@@ -2694,7 +2711,7 @@ const directed = <T extends { Box: unknown; Text: unknown }>(table: T, dir: Dir)
   type Props = Record<string, unknown> & { children?: unknown }
   const draw = (tag: unknown, { children, ...props }: Props) => {
     const kids = children === undefined ? [] : Array.isArray(children) ? children : [children]
-    return h(tag as (props: never) => ReturnType<typeof h>, props, ...kids)
+    return h(tag as never, props, ...kids)
   }
   const Box = (props: Props) => {
     const way = typeof props.flexDirection === 'string' ? ROW_FLIP[props.flexDirection] : undefined
@@ -2731,7 +2748,7 @@ const EN = {
   more: (n: number) => `+${n} more`,
   netGlance: (n: number) => (n === 0 ? 'NET this PC only' : `NET ${n} outside`),
   // Usage: when a window starts again.
-  resetIn: (h: number, m: string) => `in ${h}h ${m}m`,
+  resetIn: (hours: number, m: string) => `in ${hours}h ${m}m`,
   days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
   // Files.
   filesTitle: (n: number) => `FILES TOUCHED · ${n}`,
@@ -2828,7 +2845,7 @@ const EL: Texts = {
   blocked: (n: number) => `${n} μπλοκαρίστηκαν`,
   more: (n: number) => `+${n} ακόμη`,
   netGlance: (n: number) => (n === 0 ? 'ΔΙΚΤΥΟ μόνο τοπικά' : `ΔΙΚΤΥΟ ${n} εκτός`),
-  resetIn: (h: number, m: string) => `σε ${h}ω ${m}λ`,
+  resetIn: (hours: number, m: string) => `σε ${hours}ω ${m}λ`,
   days: ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'],
   filesTitle: (n: number) => `ΑΡΧΕΙΑ · ${n}`,
   noFiles: 'Δεν έχουν διαβαστεί ή αλλάξει αρχεία ακόμη.',
@@ -2919,7 +2936,7 @@ const DE: Texts = {
   blocked: (n: number) => `${n} blockiert`,
   more: (n: number) => `+${n} weitere`,
   netGlance: (n: number) => (n === 0 ? 'NETZ nur dieser PC' : `NETZ ${n} außerhalb`),
-  resetIn: (h: number, m: string) => `in ${h} h ${m} min`,
+  resetIn: (hours: number, m: string) => `in ${hours} h ${m} min`,
   days: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
   filesTitle: (n: number) => `DATEIEN · ${n}`,
   noFiles: 'Noch keine Dateien gelesen oder geändert.',
@@ -3009,7 +3026,7 @@ const FR: Texts = {
   blocked: (n: number) => `${n} bloqué(s)`,
   more: (n: number) => `+${n} de plus`,
   netGlance: (n: number) => (n === 0 ? 'RÉSEAU ce PC seulement' : `RÉSEAU ${n} à l'extérieur`),
-  resetIn: (h: number, m: string) => `dans ${h} h ${m}`,
+  resetIn: (hours: number, m: string) => `dans ${hours} h ${m}`,
   days: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
   filesTitle: (n: number) => `FICHIERS · ${n}`,
   noFiles: 'Aucun fichier lu ou modifié pour le moment.',
@@ -3099,7 +3116,7 @@ const ES: Texts = {
   blocked: (n: number) => `${n} bloqueadas`,
   more: (n: number) => `+${n} más`,
   netGlance: (n: number) => (n === 0 ? 'RED solo este PC' : `RED ${n} fuera`),
-  resetIn: (h: number, m: string) => `en ${h} h ${m} min`,
+  resetIn: (hours: number, m: string) => `en ${hours} h ${m} min`,
   days: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
   filesTitle: (n: number) => `ARCHIVOS · ${n}`,
   noFiles: 'Aún no se ha leído ni cambiado ningún archivo.',
@@ -3189,7 +3206,7 @@ const IT: Texts = {
   blocked: (n: number) => `${n} bloccate`,
   more: (n: number) => `+${n} altri`,
   netGlance: (n: number) => (n === 0 ? 'RETE solo questo PC' : `RETE ${n} fuori`),
-  resetIn: (h: number, m: string) => `tra ${h} h ${m} min`,
+  resetIn: (hours: number, m: string) => `tra ${hours} h ${m} min`,
   days: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'],
   filesTitle: (n: number) => `FILE · ${n}`,
   noFiles: 'Nessun file letto o modificato finora.',
@@ -3280,7 +3297,7 @@ const PT: Texts = {
   blocked: (n: number) => `${n} bloqueadas`,
   more: (n: number) => `+${n} mais`,
   netGlance: (n: number) => (n === 0 ? 'REDE só este PC' : `REDE ${n} fora`),
-  resetIn: (h: number, m: string) => `em ${h} h ${m} min`,
+  resetIn: (hours: number, m: string) => `em ${hours} h ${m} min`,
   days: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
   filesTitle: (n: number) => `ARQUIVOS · ${n}`,
   noFiles: 'Nenhum arquivo lido ou alterado ainda.',
@@ -3371,7 +3388,7 @@ const ZH: Texts = {
   blocked: (n: number) => `${n} 次被拦截`,
   more: (n: number) => `还有 ${n} 个`,
   netGlance: (n: number) => (n === 0 ? '网络 仅本机' : `网络 外部 ${n} 处`),
-  resetIn: (h: number, m: string) => `${h} 小时 ${m} 分后`,
+  resetIn: (hours: number, m: string) => `${hours} 小时 ${m} 分后`,
   days: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
   filesTitle: (n: number) => `文件 · ${n}`,
   noFiles: '还没有读取或修改任何文件。',
@@ -3461,7 +3478,7 @@ const JA: Texts = {
   blocked: (n: number) => `${n} 件ブロック`,
   more: (n: number) => `ほか ${n} 件`,
   netGlance: (n: number) => (n === 0 ? 'ネット この PC のみ' : `ネット 外部 ${n} 件`),
-  resetIn: (h: number, m: string) => `${h} 時間 ${m} 分後`,
+  resetIn: (hours: number, m: string) => `${hours} 時間 ${m} 分後`,
   days: ['日', '月', '火', '水', '木', '金', '土'],
   filesTitle: (n: number) => `ファイル · ${n}`,
   noFiles: 'まだファイルは読み込み・変更されていません。',
@@ -3552,7 +3569,7 @@ const AR: Texts = {
   blocked: (n: number) => `${n} محظورة`,
   more: (n: number) => `+${n} أخرى`,
   netGlance: (n: number) => (n === 0 ? 'الشبكة: هذا الجهاز فقط' : `الشبكة: ${n} بالخارج`),
-  resetIn: (h: number, m: string) => `بعد ${h} س ${m} د`,
+  resetIn: (hours: number, m: string) => `بعد ${hours} س ${m} د`,
   days: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
   filesTitle: (n: number) => `الملفات · ${n}`,
   noFiles: 'لم تُقرأ أو تُغيَّر أي ملفات بعد.',

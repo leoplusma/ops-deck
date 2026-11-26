@@ -1433,6 +1433,31 @@ const pct = (value: number | null | undefined) => (value === null || value === u
 // The usage bars: this many characters wide, the used part rounded to whole characters.
 const USAGE_CELLS = 14
 const usedCells = (percent: number, cells = USAGE_CELLS) => Math.max(0, Math.min(cells, Math.round((percent / 100) * cells)))
+// Fable's weekly window from the app's plan card: the desktop app's own session tool
+// (ccd_session_mgmt get_usage) lists every plan window, "Weekly · Fable" among them.
+// Asked at most once a minute; null where the plan has no Fable window or the app can't say.
+type PlanWindow = { used: number; resets: string | null }
+let planFableAt = -Infinity
+let planFableLast: PlanWindow | null = null
+let planFableNote = 'not asked yet'
+const planFable = async ($: Engine): Promise<PlanWindow | null> => {
+  const now = await $.clock.now()
+  if (now - planFableAt < 60000) return planFableLast
+  planFableAt = now
+  try {
+    const result = await $.mcp.call('ccd_session_mgmt', 'get_usage', {})
+    const text = result.content.map(block => ('text' in block && typeof block.text === 'string' ? block.text : '')).join('')
+    const body = (result.structuredContent ?? JSON.parse(text)) as {
+      plan?: { status?: string; windows?: { label?: string; percentUsed?: number; resetsAt?: string }[] }
+    }
+    const window = body.plan?.windows?.find(w => /fable/i.test(w.label ?? ''))
+    planFableLast = window !== undefined && typeof window.percentUsed === 'number' ? { used: window.percentUsed, resets: window.resetsAt ?? null } : null
+    planFableNote = `plan ${body.plan?.status ?? '?'}: ${(body.plan?.windows ?? []).map(w => `${w.label}=${w.percentUsed}`).join(', ')}`
+  } catch (error) {
+    planFableNote = `failed: ${String(error)}`
+  }
+  return planFableLast
+}
 // Plan windows and context: amber from 70% used, red from 90%.
 const tone = (value: number | null | undefined) =>
   value === null || value === undefined ? CYAN : value >= 90 ? RED : value >= 70 ? AMBER : CYAN
@@ -2299,8 +2324,14 @@ const refresh = async ($: Engine) => {
     const usage = await $.session.usage().catch(() => undefined)
     const folder = await $.session.root().catch(() => null)
     const limit = (kind: string) => usage?.rateLimits.find(l => l.kind === kind)
+    // Fable's own weekly window. The replies' limit windows don't carry it, so it comes
+    // from the app's plan card (planFable); a reply window naming it is taken too.
+    const fromReply = limit('seven_day_overage_included') ?? usage?.rateLimits.find(l => /fable/i.test(l.kind))
+    const fromPlan = fromReply === undefined ? await planFable($) : null
     const next: Readout = {
       model,
+      fable: fromReply?.percentUsed ?? fromPlan?.used ?? null,
+      fableResets: fromReply?.resetsAt ?? fromPlan?.resets ?? null,
       fiveHour: limit('five_hour')?.percentUsed ?? null,
       week: limit('seven_day')?.percentUsed ?? null,
       fiveHourResets: limit('five_hour')?.resetsAt ?? null,
@@ -2469,7 +2500,14 @@ const diagnose = async ($: Engine): Promise<string> => {
   const surface = await $.session.surface().catch(() => 'error')
   const surfaces = await $.session.surfaces().catch(() => ['error'])
   const r = await read($, readout).catch(error => `error: ${String(error)}`)
+  // Every rate-limit window the app reports, as it names them (to find Fable's).
+  const windows = await $.session
+    .usage()
+    .then(u => u.rateLimits.map(l => `${l.kind}=${l.percentUsed}`).join(', '))
+    .catch(error => `error: ${String(error)}`)
   const lines = [
+    `rate limits: ${windows}`,
+    `plan card: ${planFableNote}`,
     `store.background: ${JSON.stringify(background)}`,
     `store.scene: ${JSON.stringify(scene)}`,
     `store.dashboard: ${JSON.stringify(dashboard)}`,
@@ -2660,7 +2698,7 @@ const revealFile = async ($: Engine, path: string, how: 'select' | 'open' = 'sel
 }
 
 // The version shown in the dashboard; build.ps1 checks it matches .claude-plugin/plugin.json.
-const VERSION = '1.2.2'
+const VERSION = '1.3.0'
 // Where the project lives on GitHub (shown in the help's credits).
 const REPO_URL = 'https://github.com/leoplusma/ops-deck'
 
@@ -4123,6 +4161,13 @@ export const register: Register = on => {
         <Text mono dimColor>│</Text>
         <Text mono color={tone(r.week)}>WK {pct(r.week)}</Text>
         <Text mono dimColor>│</Text>
+        {/* Fable's own weekly window, percent used like 5H and WK; only on plans that have one. */}
+        {r.fable != null && (
+          <Text key="band-fable" mono color={tone(r.fable)}>
+            FB {pct(r.fable)}
+          </Text>
+        )}
+        {r.fable != null && <Text mono dimColor>│</Text>}
         <Text mono color={CYAN}>Σ {durationText(workDone + (working ? r.seconds : 0))}</Text>
         <Text mono dimColor>│</Text>
         <Text mono color={CYAN}>OPS {r.tools}</Text>
@@ -4345,7 +4390,11 @@ export const register: Register = on => {
             { key: 'ctx', label: 'CTX', value: r.contextPercent, note: tokens },
             { key: '5h', label: '5H ', value: r.fiveHour, note: withReset(resetText(r.fiveHourResets, now, t)) },
             { key: 'wk', label: 'WK ', value: r.week, note: withReset(resetText(r.weekResets, now, t)) },
-          ].map(one => {
+            // Fable's own weekly window, percent used like the others; a row only on plans that have it.
+            ...(r.fable != null
+              ? [{ key: 'fb', label: 'FB ', value: r.fable, note: withReset(resetText(r.fableResets, now, t)) }]
+              : []),
+          ].map((one: { key: string; label: string; value: number | null; note: string; shown?: string }) => {
             if (one.value === null) {
               return (
                 <Text key={`use:${one.key}`} mono color={MUTED}>
@@ -4354,7 +4403,8 @@ export const register: Register = on => {
               )
             }
             // Label, bar, percent and note with a space between each, and a little margin.
-            const cells = Math.max(USAGE_CELLS, e.props.bodyColumns - 3 - 4 - one.note.length - 6)
+            const figure = one.shown ?? pct(one.value)
+            const cells = Math.max(USAGE_CELLS, e.props.bodyColumns - 3 - Math.max(4, figure.length) - one.note.length - 6)
             const used = usedCells(one.value, cells)
             return (
               // A thin bar drawn with line characters: heavy for the part used, light for the rest.
@@ -4364,7 +4414,7 @@ export const register: Register = on => {
                   {'━'.repeat(used)}
                   <Text dimColor>{'─'.repeat(cells - used)}</Text>
                 </Text>
-                <Text mono color={tone(one.value)}>{pct(one.value)}</Text>
+                <Text mono color={tone(one.value)}>{figure}</Text>
                 {one.note !== '' && <Text mono color={MUTED}>{one.note}</Text>}
               </Box>
             )

@@ -22,7 +22,7 @@
 
 - **Nine animated backgrounds** that fade in while Claude works and fade out when it's done: five dark (circuit, horizon, data room, code rain, signal) and four light (ink plotter, halftone tide, digital cream, heartline). A light scene also switches the app, the band and the dashboard to light colours. One colour tells you what Claude is doing right now: **violet** thinking, **amber** working with files, **green** running commands, **magenta** reaching the web. Everything turns **red** when a tool fails.
 - **Two still choices** that follow the app's own light or dark setting: **spotlight**, a quiet studio backdrop (blue-black or ivory), and **None**, one plain colour (night blue or cream). In the Scene list, ☾ marks dark scenes, ☀ light ones and ◐ the ones that follow the app.
-- **A status band above the prompt**: what Claude is doing (◉ THINKING, FILES, RUNNING or WEB, in that colour) or idle, context used, 5-hour and weekly plan usage, time worked, tool calls and an API cost estimate. It flashes green on a clean finish and turns red on a failure.
+- **A status band above the prompt**: what Claude is doing (◉ THINKING, FILES, RUNNING or WEB, in that colour) or idle, context used, 5-hour and weekly plan usage (plus **FB**, the Fable weekly limit, on plans that have one), time worked, tool calls and an API cost estimate. It flashes green on a clean finish and turns red on a failure.
 - **A session dashboard** in the side pane:
   - **The session folder**, with a 📂 button that opens it.
   - **What left this PC**: every web or network place a tool call reached, with the exact command, and the tries a hook blocked.

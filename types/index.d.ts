@@ -14,6 +14,9 @@ export type Readout = {
   contextWindow?: number | null
   // The session's project folder, absolute; shown in the dashboard's network section.
   folder?: string | null
+  // Fable's own weekly window, percent used, and when it resets; null where the plan has none.
+  fable?: number | null
+  fableResets?: string | null
 }
 
 export type Alert = { tool: string; reason: string } | null

@@ -90,6 +90,21 @@ test('the band shows LOCAL while nothing has left this PC', async ($, on) => {
   await ui.unmount()
 })
 
+test('the band shows the Fable weekly limit used, only when the plan has one', async ($, on) => {
+  on('clock.now', () => ({ value: 1794700000000 }))
+  const readout: Record<string, unknown> = { model: 'x', contextPercent: 10, usd: null, fiveHour: 20, week: 30, tools: 0, seconds: 0 }
+  on('state.get', ($, e, next) => (e.key === 'readout' ? { value: { value: readout, version: 1 } } : next(e)))
+
+  let ui = await $.ui.mount(BAND)
+  expect(await ui.find({ type: 'Text', key: 'band-fable' })).toBeUndefined()
+  await ui.unmount()
+
+  readout.fable = 42
+  ui = await $.ui.mount(BAND)
+  expect(await ui.find({ type: 'Text', text: /^FB 42%$/ })).toBeDefined()
+  await ui.unmount()
+})
+
 test('the band counts the places reached outside this PC, and warns on a full context', async ($, on) => {
   on('clock.now', () => ({ value: 1794700000000 }))
   const readout = { model: 'x', contextPercent: 93, usd: null, fiveHour: null, week: null, tools: 0, seconds: 0 }
